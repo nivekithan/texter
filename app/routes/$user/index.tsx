@@ -1,7 +1,7 @@
 import type { LoaderFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
-import { useLoaderData } from "@remix-run/react";
+import { Link, useLoaderData } from "@remix-run/react";
 import { getUserId } from "~/server/session.server";
 import type { DbTweets, DbUser } from "~/server/supabase.server";
 import { supabase } from "~/server/supabase.server";
@@ -86,7 +86,11 @@ export default function UserPage() {
   return (
     <ol>
       {loaderData.tweets.map(({ message, tweet_id }) => {
-        return <li key={tweet_id}>{message}</li>;
+        return (
+          <li key={tweet_id}>
+            <Link to={`./tweets/${tweet_id}`}>{message}</Link>
+          </li>
+        );
       })}
     </ol>
   );

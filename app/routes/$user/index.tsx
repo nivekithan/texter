@@ -4,7 +4,8 @@ import { redirect } from "@remix-run/node";
 import { Link, useLoaderData } from "@remix-run/react";
 import { getUserId } from "~/server/session.server";
 import type { DbTweets, DbUser } from "~/server/supabase.server";
-import { supabase } from "~/server/supabase.server";
+import { getAllTweetsFromUser } from "~/server/supabase.server";
+import { getUserOfUserName } from "~/server/supabase.server";
 import { AppUrl } from "~/utils/url";
 import { invariant } from "~/utils/utils";
 
@@ -17,9 +18,9 @@ type LoaderData =
   | { type: "error"; error: "User not found" | "Error in loading tweets" };
 
 export const loader: LoaderFunction = async ({ request, params }) => {
-  const userId = await getUserId(request);
+  const loggedInUserId = await getUserId(request);
 
-  if (userId === null) {
+  if (loggedInUserId === null) {
     const requestUrl = new URL(request.url);
 
     const searchParams = new URLSearchParams();
@@ -36,42 +37,34 @@ export const loader: LoaderFunction = async ({ request, params }) => {
 
   invariant(userName, "Expected the route name to be $user");
 
-  // Get the user with the username
-  const userResult = await supabase
-    .from<DbUser>("users")
-    .select("user_name, user_id")
-    .eq("user_name", userName);
+  const user = await getUserOfUserName<Pick<DbUser, "user_name" | "user_id">>(
+    userName,
+    "user_name, user_id"
+  );
 
-  if (userResult.error || userResult.data.length === 0) {
-    // There is no user with the given username
-
+  if (user === null) {
     return json<LoaderData>({ error: "User not found", type: "error" });
   }
 
-  const user = userResult.data[0]; // There should only be one user with the given username
-  const { user_id } = user;
+  const { user_id: userId } = user;
 
-  // Get the tweets associated with the user
-  const tweetResult = await supabase
-    .from<DbTweets>("tweets")
-    .select("message, tweet_id")
-    .eq("user_id", user_id)
-    .order("created_at", { ascending: false })
-    .limit(10);
+  const tweets = await getAllTweetsFromUser<
+    Pick<DbTweets, "message" | "tweet_id">
+  >({
+    userId: userId,
+    selectQuery: "message, tweet_id",
+  });
 
-  if (tweetResult.error) {
-    // There was an error in loading the tweets
+  if (tweets === null) {
     return json<LoaderData>({
       error: "Error in loading tweets",
       type: "error",
     });
   }
 
-  const { data } = tweetResult;
-
   return json<LoaderData>({
     userName: userName,
-    tweets: data,
+    tweets: tweets,
     type: "success",
   });
 };

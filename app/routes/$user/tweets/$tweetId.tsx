@@ -4,14 +4,20 @@ import { redirect } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import { getUserId } from "~/server/session.server";
 import type { DbTweets, DbUser } from "~/server/supabase.server";
-import { supabase } from "~/server/supabase.server";
+import { getOneTweetFromUser } from "~/server/supabase.server";
+import { getUserOfUserName } from "~/server/supabase.server";
 import { AppUrl } from "~/utils/url";
 import { invariant } from "~/utils/utils";
 
 type LoaderData =
   | {
       type: "success";
-      tweet: Pick<DbTweets, "message" | "tweet_id">;
+      tweet: {
+        tweet_id: string;
+        message: string;
+        replied_to: string | null;
+        replies: string[];
+      };
     }
   | {
       type: "error";
@@ -40,35 +46,33 @@ export const loader: LoaderFunction = async ({ request, params }) => {
   invariant(userName, "Expected to have dynamic route named $user");
   invariant(tweetId, "Expected to have dynamic route named $tweetId");
 
-  const userResult = await supabase
-    .from<DbUser>("users")
-    .select("user_name, user_id")
-    .eq("user_name", userName);
+  const user = await getUserOfUserName<Pick<DbUser, "user_name" | "user_id">>(
+    userName,
+    "user_name, user_id"
+  );
 
-  if (userResult.error || userResult.data.length === 0) {
-    // There is no user with that username
-
+  if (user === null) {
     return json<LoaderData>({ error: "User not found", type: "error" });
   }
 
-  const user = userResult.data[0]; // There should only be one user with the given username
   const { user_id: userId } = user;
 
-  const tweetResult = await supabase
-    .from<DbTweets>("tweets")
-    .select("message, tweet_id")
-    .eq("user_id", userId)
-    .eq("tweet_id", tweetId);
+  const tweet = await getOneTweetFromUser<
+    Pick<DbTweets, "message" | "tweet_id" | "replied_to" | "replies">
+  >({
+    userId: userId,
+    tweetId,
+    selectQuery: "message, tweet_id, replied_to, replies",
+  });
 
-  if (tweetResult.error || tweetResult.data.length === 0) {
-    // There is no tweet with that tweetId
-
+  if (tweet === null) {
     return json<LoaderData>({ error: "Tweet not found", type: "error" });
   }
 
-  const tweet = tweetResult.data[0]; // There should only be one tweet with that given id
-
-  return json<LoaderData>({ type: "success", tweet: tweet });
+  return json<LoaderData>({
+    type: "success",
+    tweet,
+  });
 };
 
 export default function TweetPage() {
@@ -76,5 +80,14 @@ export default function TweetPage() {
 
   if (loaderData.type === "error") return <p>{loaderData.error}</p>;
 
-  return <p>{loaderData.tweet.message}</p>;
+  return (
+    <ol>
+      <li>Message : {loaderData.tweet.message}</li>
+      <li>Replied To: {loaderData.tweet.replied_to}</li>
+      <h3>Replies</h3>
+      {loaderData.tweet.replies.map((reply) => (
+        <li key={reply}>{reply}</li>
+      ))}
+    </ol>
+  );
 }

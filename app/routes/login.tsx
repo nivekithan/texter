@@ -18,8 +18,8 @@ import {
   getUserSession,
   sessionStorage,
 } from "~/server/session.server";
-import type { DbUser } from "~/server/supabase.server";
-import { supabase } from "~/server/supabase.server";
+import type { DbUser} from "~/server/supabase.server";
+import { getUserOfUserName } from "~/server/supabase.server";
 import { AppUrl } from "~/utils/url";
 
 export const loader: LoaderFunction = async ({ request }) => {
@@ -82,32 +82,20 @@ export const action: ActionFunction = async ({ request }) => {
   const userName = formUserName as string;
   const password = formPassword as string;
 
-  const user = await supabase
-    .from<DbUser>("users")
-    .select("user_id, user_name, password_hash")
-    .eq("user_name", userName);
+  const user = await getUserOfUserName<DbUser>(
+    userName,
+    "user_id, user_name, password_hash"
+  );
 
-  if (user.error) {
+  if (user === null) {
     return json<ActionData>({
-      formError: user.error.message,
+      userNameError: "Username and password does not match",
       passwordError: null,
-      userNameError: null,
+      formError: null,
     });
   }
 
-  const { data } = user;
-
-  if (data.length === 0) {
-    return json<ActionData>({
-      formError: "Given username and password does not match",
-      passwordError: null,
-      userNameError: null,
-    });
-  }
-
-  const userData = data[0];
-
-  const isCorrectPassword = await compare(password, userData.password_hash);
+  const isCorrectPassword = await compare(password, user.password_hash);
 
   if (!isCorrectPassword) {
     return json<ActionData>({
@@ -119,7 +107,7 @@ export const action: ActionFunction = async ({ request }) => {
 
   const userSession = await getUserSession(request);
 
-  userSession.set("userId", userData.user_id);
+  userSession.set("userId", user.user_id);
 
   // Get redirectTo query from the url, if not empty redirect to that page
   // or else redirectTo home page

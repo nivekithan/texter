@@ -87,15 +87,6 @@ WITH first_reply as (
         message = 'Reply to first tweet'
 ),
 
-second_reply as (
-    SELECT
-        tweet_id as id
-    FROM
-        tweets
-    WHERE
-        message = 'Replying to second tweet by myself'
-),
-
 first_tweet as (
     SELECT 
         tweet_id as id
@@ -108,6 +99,30 @@ first_tweet as (
 
 
 UPDATE tweets
-SET replies = replies || (SELECT id FROM first_reply) || (SELECT id FROM second_reply)
+SET replies = replies || (SELECT id FROM first_reply) 
 WHERE 
     tweet_id = (SELECT id FROM first_tweet);
+
+
+WITH second_reply as (
+    SELECT 
+        tweet_id as id
+    FROM    
+        tweets
+    WHERE
+        message = 'Replying to second tweet by myself'
+),
+
+second_tweet as (
+    SELECT 
+        tweet_id as id
+    FROM
+        tweets
+    WHERE       
+        message = 'second tweet 🥳'
+)
+
+UPDATE tweets
+SET replies = replies || (SELECT id FROM second_reply)
+WHERE   
+    tweet_id = (SELECT id FROM second_tweet);

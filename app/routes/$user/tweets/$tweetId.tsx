@@ -4,20 +4,35 @@ import { redirect } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import { getUserId } from "~/server/session.server";
 import type { DbTweets, DbUser } from "~/server/supabase.server";
+import { getTweet } from "~/server/supabase.server";
 import { getOneTweetFromUser } from "~/server/supabase.server";
 import { getUserOfUserName } from "~/server/supabase.server";
 import { AppUrl } from "~/utils/url";
 import { invariant } from "~/utils/utils";
 
-type LoaderData =
+type Tweet = {
+  tweet_id: string;
+  message: string;
+  replied_to: string | null;
+  replies: TweetReply[];
+};
+
+type TweetReply =
   | {
       type: "success";
       tweet: {
         tweet_id: string;
         message: string;
         replied_to: string | null;
-        replies: string[];
+        replies: null;
       };
+    }
+  | { type: "error"; error: "User not found" | "Tweet not found" };
+
+type LoaderData =
+  | {
+      type: "success";
+      tweet: Tweet;
     }
   | {
       type: "error";
@@ -69,9 +84,40 @@ export const loader: LoaderFunction = async ({ request, params }) => {
     return json<LoaderData>({ error: "Tweet not found", type: "error" });
   }
 
+  const repliesResult = await Promise.all(
+    tweet.replies.map((replyTweetId) => {
+      const replyTweet = getTweet<
+        Pick<DbTweets, "message" | "tweet_id" | "replied_to">
+      >({
+        tweetId: replyTweetId,
+        selectQuery: "message, tweet_id, replied_to",
+      });
+
+      return replyTweet;
+    })
+  );
+
+  const replies: TweetReply[] = repliesResult.map(
+    (repliesResult): TweetReply => {
+      if (repliesResult === null) {
+        return { type: "error", error: "Tweet not found" };
+      }
+
+      return {
+        type: "success",
+        tweet: {
+          message: repliesResult.message,
+          tweet_id: repliesResult.tweet_id,
+          replied_to: repliesResult.replied_to,
+          replies: null,
+        },
+      };
+    }
+  );
+
   return json<LoaderData>({
     type: "success",
-    tweet,
+    tweet: { ...tweet, replies: replies },
   });
 };
 
@@ -85,9 +131,18 @@ export default function TweetPage() {
       <li>Message : {loaderData.tweet.message}</li>
       <li>Replied To: {loaderData.tweet.replied_to}</li>
       <h3>Replies</h3>
-      {loaderData.tweet.replies.map((reply) => (
-        <li key={reply}>{reply}</li>
-      ))}
+      {loaderData.tweet.replies.map((reply) => {
+        if (reply.type === "error") {
+          return <p>{reply.error}</p>;
+        }
+
+        return (
+          <ol key={reply.tweet.tweet_id}>
+            <li>Message : {reply.tweet.message}</li>
+            <li>Replied To: {reply.tweet.replied_to}</li>
+          </ol>
+        );
+      })}
     </ol>
   );
 }

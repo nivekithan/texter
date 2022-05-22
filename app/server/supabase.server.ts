@@ -124,6 +124,11 @@ export const getAllTweetsFromUser = async <T>({
   return tweetResult.data as unknown as T[];
 };
 
+export type GetTweetArgs = {
+  selectQuery: string;
+  tweetId: string;
+};
+
 /**
  *
  * Get tweet with  tweet_id
@@ -136,7 +141,7 @@ export const getAllTweetsFromUser = async <T>({
 export const getTweet = async <T>({
   selectQuery = "*",
   tweetId,
-}: GetOneTweetFromUserArgs) => {
+}: GetTweetArgs) => {
   const tweetResult = await supabase
     .from<DbTweets>("tweets")
     .select(selectQuery)

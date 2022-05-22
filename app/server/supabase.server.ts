@@ -8,10 +8,21 @@ export const supabase = createClient(
 
 /**
  * Represents `users` table in the database
- * 
+ *
  */
 export type DbUser = {
   user_id: string;
   user_name: string;
   password_hash: string;
+};
+
+/**
+ * Represents `tweets` table in the database
+ */
+
+export type DbTweets = {
+  tweet_id: string;
+  message: string;
+  user_id: string;
+  created_at: string;
 };

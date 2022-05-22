@@ -20,3 +20,40 @@ export const getEnvVar = (name: string) => {
 
   return value;
 };
+
+type InvariantType = (
+  condition: unknown,
+  message: string | (() => string)
+) => asserts condition;
+
+/**
+ * Function which asserts the condition to be true, if not throws with
+ * message passed as second argument. helpful in narrowing down the type
+ *
+ * @example
+ * ```ts
+ * const boo : string | null = null;
+ * const foo : string | null = "foo";
+ *
+ * invariant(boo, "boo is null"); // throw Error("boo is null");
+ * invariant(foo); // Will not throw
+ *
+ * const firstChar = foo.charAt(0); // type of foo is narrowed to string
+ * ```
+ *
+ * @param condition - Condition to check
+ * @param message - Message to show when the condition fails
+ * @returns
+ */
+export const invariant: InvariantType = (
+  condition: unknown,
+  message: string | (() => string) = "Invariant failed"
+): asserts condition => {
+  if (condition) {
+    return;
+  }
+
+  const errorMessage = typeof message === "string" ? message : message();
+
+  throw new Error(errorMessage);
+};

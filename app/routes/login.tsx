@@ -24,9 +24,12 @@ import { AppUrl } from "~/utils/url";
 
 export const loader: LoaderFunction = async ({ request }) => {
   const userId = await getUserId(request);
+  const url = new URL(request.url);
+  const search = url.searchParams;
+  const redirectUrl = search.get("redirectTo") ?? AppUrl.home;
 
   if (userId !== null) {
-    return redirect(AppUrl.home);
+    return redirect(redirectUrl);
   }
 
   return null;
@@ -118,7 +121,12 @@ export const action: ActionFunction = async ({ request }) => {
 
   userSession.set("userId", userData.user_id);
 
-  return redirect("/", {
+  // Get redirectTo query from the url, if not empty redirect to that page
+  // or else redirectTo home page
+  const requestSearchParams = new URL(request.url).searchParams;
+  const redirectTo = requestSearchParams.get("redirectTo") ?? AppUrl.home;
+
+  return redirect(redirectTo, {
     headers: { "Set-Cookie": await sessionStorage.commitSession(userSession) },
   });
 };

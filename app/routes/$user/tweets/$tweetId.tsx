@@ -3,7 +3,8 @@ import { json } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import { getUserId } from "~/server/session.server";
-import type { DbTweets, DbUser } from "~/server/supabase.server";
+import type { DbTweets, DbUser} from "~/server/supabase.server";
+import { getTweetUserName } from "~/server/supabase.server";
 import { getTweet } from "~/server/supabase.server";
 import { getOneTweetFromUser } from "~/server/supabase.server";
 import { getUserOfUserName } from "~/server/supabase.server";
@@ -84,6 +85,17 @@ export const loader: LoaderFunction = async ({ request, params }) => {
     return json<LoaderData>({ error: "Tweet not found", type: "error" });
   }
 
+  if (tweet.replied_to !== null) {
+    // As of now tweet.replied_to is in uuid, we have to convert it to
+    // userName
+    const userNameRes = await getTweetUserName(tweet.replied_to);
+
+    invariant(userNameRes, "Expected replied_to user_id to be valid");
+
+    // Set found userName in tweet.replied_to field
+    tweet.replied_to = userNameRes;
+  }
+
   const repliesResult = await Promise.all(
     tweet.replies.map((replyTweetId) => {
       const replyTweet = getTweet<
@@ -108,7 +120,9 @@ export const loader: LoaderFunction = async ({ request, params }) => {
         tweet: {
           message: repliesResult.message,
           tweet_id: repliesResult.tweet_id,
-          replied_to: repliesResult.replied_to,
+          // Since we are finding the replies for the tweet from the user, we can set userName
+          // to that userName without needing to fetch it from db
+          replied_to: userName,
           replies: null,
         },
       };

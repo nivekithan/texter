@@ -1,3 +1,4 @@
+import type { PostgrestResponse } from "@supabase/supabase-js";
 import { createClient } from "@supabase/supabase-js";
 import { getEnvVar } from "~/utils/utils";
 
@@ -27,6 +28,37 @@ export type DbTweets = {
   created_at: string;
   replied_to: string | null;
   replies: string[];
+};
+
+/**
+ * Each tweet is belongs to a user, through this function
+ * you can get userName of the user who send that tweet
+ *
+ * @param tweetId - `tweet_id` of the tweet
+ * @returns if there is a user who sent that tweet then it returns the `user_name` of that user or else
+ * it returns `null`
+ */
+export const getTweetUserName = async (tweetId: string) => {
+  const tweetResult = (await supabase
+    .from<DbTweets>("tweets")
+    .select(
+      `users!fk_user_id (
+      user_name
+    )`
+    )
+    .eq("tweet_id", tweetId)) as PostgrestResponse<{
+    users: { user_name: string };
+  }>;
+
+  if (tweetResult.error || tweetResult.data.length === 0) {
+    // There is no user who sent that tweet
+    // This is possible when the tweet_id is not valid
+    return null;
+  }
+
+  const user = tweetResult.data[0].users; // There can be only one user who sent that tweet
+
+  return user.user_name;
 };
 
 /**

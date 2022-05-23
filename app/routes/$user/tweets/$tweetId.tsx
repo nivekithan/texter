@@ -3,7 +3,7 @@ import { json } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import { getUserId } from "~/server/session.server";
-import type { DbTweets, DbUser} from "~/server/supabase.server";
+import type { DbTweets, DbUser } from "~/server/supabase.server";
 import { getTweetUserName } from "~/server/supabase.server";
 import { getTweet } from "~/server/supabase.server";
 import { getOneTweetFromUser } from "~/server/supabase.server";
@@ -52,7 +52,7 @@ export const loader: LoaderFunction = async ({ request, params }) => {
     // redirect to the page they were on
     searchParams.set("redirectTo", requestUrl.pathname);
 
-    const finalUrl = `${AppUrl.login}?${searchParams}`;
+    const finalUrl = `${AppUrl.join}?${searchParams}`;
     return redirect(finalUrl);
   }
 

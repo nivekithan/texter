@@ -188,3 +188,25 @@ export const getTweet = async <T>({
 
   return tweet as unknown as T;
 };
+
+export type InsertUserArgs = {
+  userName: string;
+  passwordHash: string;
+};
+
+export const insertUserWithPassword = async ({
+  passwordHash,
+  userName,
+}: InsertUserArgs) => {
+  const insertResult = await supabase
+    .from<DbUser>("users")
+    .insert({ user_name: userName, password_hash: passwordHash });
+
+  if (insertResult.error || insertResult.data.length === 0) {
+    // There is already a user with the given userName
+    return null;
+  }
+
+  const user = insertResult.data[0]; // There should be only on user with specified user name
+  return user.user_id;
+};

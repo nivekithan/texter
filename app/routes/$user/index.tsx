@@ -29,7 +29,7 @@ export const loader: LoaderFunction = async ({ request, params }) => {
     // redirect to the page they were on
     searchParams.set("redirectTo", requestUrl.pathname);
 
-    const finalUrl = `${AppUrl.login}?${searchParams}`;
+    const finalUrl = `${AppUrl.join}?${searchParams}`;
     return redirect(finalUrl);
   }
 

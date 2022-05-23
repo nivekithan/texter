@@ -4,6 +4,6 @@
  */
 export enum AppUrl {
   home = "/",
-  login = "/login",
+  join = "/join",
   logout = "/logout",
 }

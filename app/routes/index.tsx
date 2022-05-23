@@ -8,7 +8,7 @@ export const loader: LoaderFunction = async ({ request }) => {
   const userId = await getUserId(request);
 
   if (userId === null) {
-    return redirect(AppUrl.login);
+    return redirect(AppUrl.join);
   }
 
   return null;

@@ -17,7 +17,6 @@ import { insertTweetFromUser } from "~/server/supabase.server";
 import { getUserOfUserId } from "~/server/supabase.server";
 import { useActionData, useLoaderData } from "@remix-run/react";
 import { SendTweet } from "~/components/sendTweet";
-import { condenseString } from "~/utils/utils";
 
 type LoaderData = {
   userName: string;
@@ -86,7 +85,7 @@ export const action: ActionFunction = async ({ request }) => {
 
     const insertTweetQuery = await insertTweetFromUser({
       userId: loggedInUserId,
-      message: condenseString(message),
+      message: message,
     });
 
     if (insertTweetQuery === null)

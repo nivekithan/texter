@@ -57,3 +57,14 @@ export const invariant: InvariantType = (
 
   throw new Error(errorMessage);
 };
+
+/**
+ * Trims and replaces all whitespace character with single whitespace
+ *
+ *
+ * @param s - string to be condensed
+ * @returns newly created condensed string
+ */
+export const condenseString = (s: string) => {
+  return s.trim().replace(/\s+/g, " ").trim();
+};

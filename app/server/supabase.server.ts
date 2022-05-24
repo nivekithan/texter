@@ -88,6 +88,30 @@ export const getUserOfUserName = async <T>(
   return user as unknown as T;
 };
 
+/**
+ *
+ * Get user with the given user_id
+ *
+ * @param userId - `userId` of the user
+ * @param selectQuery - Optional select query to be used, default is `"*"`
+ * @returns if there is user with the given `user_id`, returns the user object based on selectQuery, else returns `null`
+ */
+export const getUserOfUserId = async <T>(userId: string, selectQuery = "*") => {
+  const query = await supabase
+    .from<DbUser>("users")
+    .select(selectQuery)
+    .eq("user_id", userId);
+
+  if (query.error || query.data.length === 0) {
+    // There is no user with this userName
+    return null;
+  }
+
+  const user = query.data[0]; // There can be only one user for a username
+
+  return user as unknown as T;
+};
+
 export type GetOneTweetFromUserArgs = {
   userId: string;
   tweetId: string;
@@ -207,6 +231,30 @@ export const insertUserWithPassword = async ({
     return null;
   }
 
-  const user = insertResult.data[0]; // There should be only on user with specified user name
+  const user = insertResult.data[0]; // We have added only one user
   return user.user_id;
+};
+
+export type InsertTweetFromUserArgs = {
+  userId: string;
+  message: string;
+};
+
+export const insertTweetFromUser = async ({
+  userId,
+  message,
+}: InsertTweetFromUserArgs) => {
+  const query = await supabase
+    .from<DbTweets>("tweets")
+    .insert({ user_id: userId, message: message });
+
+  if (query.error || query.data.length === 0) {
+    // Some error happened while adding tweet
+    // maybe there is no user with that user_id
+    return null;
+  }
+
+  const tweet = query.data[0]; // We have added only on tweet
+
+  return tweet;
 };

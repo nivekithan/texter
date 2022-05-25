@@ -71,15 +71,15 @@ const validatePassword = (password: FormDataEntryValue | null) => {
 };
 
 /**
- * Verifies the given information with database and return the userId of verified user
-
- *
- * @param userName - username field from the formdata
- * @param password  - password field from the formdata
- * @returns if the verification passes it returns `{type : "success", userId : string}` where userId is the 
- * `user_id` of the verified user, otherwise it returns `{type : "error", actionData : ActionData}` where
- * `actionData` is populated with error message
- */
+   * Verifies the given information with database and return the userId of verified user
+  
+   *
+   * @param userName - username field from the formdata
+   * @param password  - password field from the formdata
+   * @returns if the verification passes it returns `{type : "success", userId : string}` where userId is the 
+   * `user_id` of the verified user, otherwise it returns `{type : "error", actionData : ActionData}` where
+   * `actionData` is populated with error message
+   */
 const verifyUserPassword = async (
   userName: string,
   password: string

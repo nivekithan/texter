@@ -12,14 +12,24 @@ import {
 import { AppUrl } from "~/utils/url";
 import styles from "~/styles/styles.css";
 import { NavBar } from "~/components/navBar";
-import type { DbUser } from "~/server/supabase.server";
+import type { DbUser} from "~/server/supabase.server";
+import { getTweetUserName } from "~/server/supabase.server";
+import { getLatestTweets } from "~/server/supabase.server";
 import { insertTweetFromUser } from "~/server/supabase.server";
 import { getUserOfUserId } from "~/server/supabase.server";
 import { useActionData, useLoaderData } from "@remix-run/react";
 import { SendTweet } from "~/components/sendTweet";
+import { Tweet } from "~/components/tweet";
 
 type LoaderData = {
   userName: string;
+  tweets: {
+    userName: string;
+    message: string;
+    tweetId: string;
+    repliedTo?: string;
+    repliesCount: number;
+  }[];
 };
 
 export const loader: LoaderFunction = async ({ request }) => {
@@ -46,7 +56,42 @@ export const loader: LoaderFunction = async ({ request }) => {
     });
   }
 
-  return json<LoaderData>({ userName: user.user_name });
+  const latest10Tweets = await getLatestTweets<{
+    message: string;
+    tweet_id: string;
+    users: { user_name: string };
+    replied_to: string | null;
+    replies: string[];
+  }>({
+    count: 10,
+    selectQuery: `message, tweet_id, users!fk_user_id (user_name), replied_to, replies`,
+  });
+  if (latest10Tweets === null) {
+    // Something is wrong with getting data from database
+    return json<LoaderData>({ userName: user.user_name, tweets: [] });
+  }
+
+  const latestTweetsWithRepliedTo = await Promise.all(
+    latest10Tweets.map(
+      async ({ message, tweet_id, users, replied_to, replies }) => {
+        return {
+          message,
+          tweetId: tweet_id,
+          userName: users.user_name,
+          repliedTo:
+            replied_to === null
+              ? undefined
+              : (await getTweetUserName(replied_to)) ?? undefined,
+          repliesCount: replies.length,
+        };
+      }
+    )
+  );
+
+  return json<LoaderData>({
+    userName: user.user_name,
+    tweets: latestTweetsWithRepliedTo,
+  });
 };
 
 type ActionData = {
@@ -100,7 +145,7 @@ export const links: LinksFunction = () => {
 };
 
 export default function Index() {
-  const { userName } = useLoaderData<LoaderData>();
+  const { userName, tweets } = useLoaderData<LoaderData>();
   const actionData = useActionData<ActionData>();
 
   return (
@@ -115,6 +160,24 @@ export default function Index() {
           <div className="border-b border-gray-600">
             <SendTweet error={actionData?.error} />
           </div>
+          <ol>
+            {tweets.map(
+              ({ message, tweetId, userName, repliedTo, repliesCount }, i) => {
+                return (
+                  <li key={tweetId} className="border-b border-gray-600">
+                    <Tweet
+                      message={message}
+                      tweetId={tweetId}
+                      userName={userName}
+                      repliedTo={repliedTo}
+                      relpiesCount={repliesCount}
+                      likesCount={0}
+                    />
+                  </li>
+                );
+              }
+            )}
+          </ol>
         </div>
       </div>
     </div>

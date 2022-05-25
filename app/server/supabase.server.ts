@@ -213,15 +213,47 @@ export const getTweet = async <T>({
   return tweet as unknown as T;
 };
 
-export type InsertUserArgs = {
+export type GetLatestTweetsArgs = {
+  count: number;
+  selectQuery: string;
+};
+
+export const getLatestTweets = async <T>({
+  count,
+  selectQuery,
+}: GetLatestTweetsArgs) => {
+  const query = await supabase
+    .from<DbTweets>("tweets")
+    .select(selectQuery)
+    .order("created_at", { ascending: false })
+    .limit(count);
+
+
+  if (query.error || query.data.length === 0) {
+    // There is some error with the select query
+    return null;
+  }
+
+  return query.data as unknown as T[];
+};
+
+export type InsertUserWithPasswordArgs = {
   userName: string;
   passwordHash: string;
 };
 
+/**
+ * Inserts the user with the given username and passwordHash to the db
+ *
+ * @param passwordHash - `password_hash` of the user
+ * @param userName - user_name of the user
+ * @return if the user is inserted, returns the `user_id`, else returns `null`
+ */
+
 export const insertUserWithPassword = async ({
   passwordHash,
   userName,
-}: InsertUserArgs) => {
+}: InsertUserWithPasswordArgs) => {
   const insertResult = await supabase
     .from<DbUser>("users")
     .insert({ user_name: userName, password_hash: passwordHash });
@@ -239,6 +271,15 @@ export type InsertTweetFromUserArgs = {
   userId: string;
   message: string;
 };
+
+/**
+ *
+ * Inserts the `tweet` not a reply to any other tweet in the db
+ *
+ * @param userId - UserId of the user who made the tweet
+ * @param message - message of the tweet
+ * @returns if the tweet is inserted, returns the tweet object, else returns `null`
+ */
 
 export const insertTweetFromUser = async ({
   userId,

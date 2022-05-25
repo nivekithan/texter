@@ -1,9 +1,18 @@
-import type { LoaderFunction } from "@remix-run/node";
+import type { ActionFunction, LoaderFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
-import { useLoaderData } from "@remix-run/react";
+import {
+  Form,
+  useActionData,
+  useLoaderData,
+  useTransition,
+} from "@remix-run/react";
+import { useEffect, useRef } from "react";
+import { MainTweet } from "~/components/mainTweet";
+import { Tweet } from "~/components/tweet";
 import { getUserId } from "~/server/session.server";
 import type { DbTweets, DbUser } from "~/server/supabase.server";
+import { insertTweetReplyFromUser } from "~/server/supabase.server";
 import { getTweetUserName } from "~/server/supabase.server";
 import { getTweet } from "~/server/supabase.server";
 import { getOneTweetFromUser } from "~/server/supabase.server";
@@ -11,10 +20,11 @@ import { getUserOfUserName } from "~/server/supabase.server";
 import { AppUrl } from "~/utils/url";
 import { invariant } from "~/utils/utils";
 
-type Tweet = {
+type LoaderTweet = {
+  userName: string; // Username of the user who posted the tweet
   tweet_id: string;
   message: string;
-  replied_to: string | null;
+  replied_to: string | null; // Username of the replied_to user
   replies: TweetReply[];
 };
 
@@ -25,7 +35,8 @@ type TweetReply =
         tweet_id: string;
         message: string;
         replied_to: string | null;
-        replies: null;
+        replyCount: number;
+        userName: string;
       };
     }
   | { type: "error"; error: "User not found" | "Tweet not found" };
@@ -33,7 +44,7 @@ type TweetReply =
 type LoaderData =
   | {
       type: "success";
-      tweet: Tweet;
+      tweet: LoaderTweet;
     }
   | {
       type: "error";
@@ -99,20 +110,28 @@ export const loader: LoaderFunction = async ({ request, params }) => {
   const repliesResult = await Promise.all(
     tweet.replies.map((replyTweetId) => {
       const replyTweet = getTweet<
-        Pick<DbTweets, "message" | "tweet_id" | "replied_to">
+        Pick<DbTweets, "message" | "tweet_id" | "replied_to" | "replies">
       >({
         tweetId: replyTweetId,
-        selectQuery: "message, tweet_id, replied_to",
+        selectQuery: "message, tweet_id, replied_to, replies",
       });
 
       return replyTweet;
     })
   );
 
-  const replies: TweetReply[] = repliesResult.map(
-    (repliesResult): TweetReply => {
+  const tweetWithUserName = { ...tweet, userName: userName };
+
+  const replies: TweetReply[] = await Promise.all(
+    repliesResult.map(async (repliesResult): Promise<TweetReply> => {
       if (repliesResult === null) {
         return { type: "error", error: "Tweet not found" };
+      }
+
+      const userName = await getTweetUserName(repliesResult.tweet_id);
+
+      if (userName === null) {
+        return { type: "error", error: "User not found" };
       }
 
       return {
@@ -120,43 +139,123 @@ export const loader: LoaderFunction = async ({ request, params }) => {
         tweet: {
           message: repliesResult.message,
           tweet_id: repliesResult.tweet_id,
+          userName,
           // Since we are finding the replies for the tweet from the user, we can set userName
           // to that userName without needing to fetch it from db
           replied_to: userName,
-          replies: null,
+          replyCount: repliesResult.replies.length,
         },
       };
-    }
+    })
   );
 
   return json<LoaderData>({
     type: "success",
-    tweet: { ...tweet, replies: replies },
+    tweet: { ...tweetWithUserName, replies: replies },
   });
+};
+
+type ActionData = {
+  errorMessage?: string;
+};
+
+export const action: ActionFunction = async ({ request, params }) => {
+  const formdata = await request.formData();
+  const userId = await getUserId(request);
+
+  if (userId === null) {
+    // User is not loggedIn
+
+    return redirect(AppUrl.join);
+  }
+
+  const actionType = formdata.get("actionType");
+
+  if (actionType === "tweetReply") {
+    const replyMessage = formdata.get("reply");
+
+    if (!replyMessage || typeof replyMessage !== "string") {
+      return json<ActionData>({ errorMessage: "Please enter valid reply" });
+    }
+
+    const tweetId = params.tweetId;
+    const userName = params.user;
+
+    invariant(tweetId, "Expected to have dynamic route named $tweetId");
+    invariant(userName, "Expected to have dynamic route named $user");
+
+    const result = await insertTweetReplyFromUser({
+      message: replyMessage,
+      repliedTo: tweetId,
+      userId: userId,
+    });
+
+    if (result === null) {
+      // Something is wrong when adding it to db
+      return json<ActionData>({
+        errorMessage: "Error adding reply, try again later",
+      });
+    }
+  }
+
+  return null;
 };
 
 export default function TweetPage() {
   const loaderData = useLoaderData<LoaderData>();
+  const actionData = useActionData<ActionData>();
+  const transition = useTransition();
+  const formRef = useRef<HTMLFormElement | null>(null);
+
+  const isReplying =
+    transition.state === "submitting" &&
+    transition.submission.formData.get("actionType") === "tweetReply";
+
+  useEffect(() => {
+    if (!isReplying) {
+      formRef.current?.reset();
+    }
+  }, [isReplying]);
 
   if (loaderData.type === "error") return <p>{loaderData.error}</p>;
 
+  const {
+    tweet: { message, replied_to, replies, userName },
+  } = loaderData;
   return (
-    <ol>
-      <li>Message : {loaderData.tweet.message}</li>
-      <li>Replied To: {loaderData.tweet.replied_to}</li>
-      <h3>Replies</h3>
-      {loaderData.tweet.replies.map((reply) => {
-        if (reply.type === "error") {
-          return <p>{reply.error}</p>;
-        }
+    <div className="max-w-[600px] border-r border-r-gray-600 min-h-screen">
+      <div className="sticky top-0 p-4 bg-black font-bold text-xl shadow bg-opacity-80">
+        Thread
+      </div>
+      <Form method="post" ref={formRef}>
+        <MainTweet
+          message={message}
+          replied_to={replied_to}
+          repliesCount={replies.length}
+          userName={userName}
+          likesCount={0}
+          errorMessage={actionData?.errorMessage}
+        />
+        {replies.map((reply) => {
+          if (reply.type === "error") return <div>{reply.error}</div>;
 
-        return (
-          <ol key={reply.tweet.tweet_id}>
-            <li>Message : {reply.tweet.message}</li>
-            <li>Replied To: {reply.tweet.replied_to}</li>
-          </ol>
-        );
-      })}
-    </ol>
+          const { message, replied_to, replyCount, tweet_id, userName } =
+            reply.tweet;
+
+          return (
+            <div key={tweet_id} className="border-b border-gray-600">
+              <Tweet
+                likesCount={0}
+                message={message}
+                relpiesCount={replyCount}
+                tweetId={tweet_id}
+                repliedTo={replied_to ?? undefined}
+                userName={userName}
+              />
+            </div>
+          );
+        })}
+      </Form>
+    </div>
   );
 }

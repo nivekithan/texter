@@ -2,7 +2,11 @@ import type { LoaderFunction } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { Outlet, useLoaderData } from "@remix-run/react";
 import { NavBar } from "~/components/navBar";
-import { getUserId, getUserSession } from "~/server/session.server";
+import {
+  getUserId,
+  getUserSession,
+  sessionStorage,
+} from "~/server/session.server";
 import type { DbUser } from "~/server/supabase.server";
 import { getUserOfUserId } from "~/server/supabase.server";
 import { AppUrl } from "~/utils/url";

@@ -18,11 +18,7 @@ export const SendTweet = ({ error }: SendTweetProps) => {
   }, [isSubmiting]);
 
   return (
-    <Form
-      method="post"
-      className="flex flex-col gap-y-5 py-5"
-      ref={formRef}
-    >
+    <Form method="post" className="flex flex-col gap-y-5 py-5" ref={formRef}>
       <TexterTextArea
         name="message"
         placeholder="Whats Happening?"

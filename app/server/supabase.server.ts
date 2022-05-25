@@ -228,7 +228,6 @@ export const getLatestTweets = async <T>({
     .order("created_at", { ascending: false })
     .limit(count);
 
-
   if (query.error || query.data.length === 0) {
     // There is some error with the select query
     return null;
@@ -298,4 +297,39 @@ export const insertTweetFromUser = async ({
   const tweet = query.data[0]; // We have added only on tweet
 
   return tweet;
+};
+
+type InsertTweetReplyFromUserArgs = {
+  userId: string;
+  message: string;
+  repliedTo: string;
+};
+
+export const insertTweetReplyFromUser = async ({
+  message,
+  repliedTo,
+  userId,
+}: InsertTweetReplyFromUserArgs) => {
+  const addTweet = await supabase.from<DbTweets>("tweets").insert({
+    user_id: userId,
+    replied_to: repliedTo,
+    message: message,
+  });
+
+  if (addTweet.error || addTweet.data.length === 0) {
+    // There is some error while adding tweet
+    return null;
+  }
+
+  const tweet = addTweet.data[0]; // We have added only on tweet
+
+  const addTweetToRepliesList = await supabase.rpc<void>("append_to_replies", {
+    add_replies_to: repliedTo,
+    replied_tweet_id: tweet.tweet_id,
+  });
+
+  if (addTweetToRepliesList.error) {
+    // There is some error while adding tweet to replies list
+    return null;
+  }
 };

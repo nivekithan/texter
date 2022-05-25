@@ -19,7 +19,7 @@ export const Tweet = ({
   repliedTo,
   likesCount,
   relpiesCount,
-}: TweetProps) => {
+}: TweetProps) => { 
   const userUrl = `${AppUrl.home}${userName}`;
   const tweetUrl = `${AppUrl.home}${userName}/tweets/${tweetId}`;
 

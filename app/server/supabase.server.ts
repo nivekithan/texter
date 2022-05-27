@@ -151,6 +151,7 @@ export const getOneTweetFromUser = async <T>({
 export type GetALlTweetsFromUserArgs = {
   userId: string;
   selectQuery: string;
+  includeReplies?: boolean;
 };
 
 /**
@@ -159,18 +160,26 @@ export type GetALlTweetsFromUserArgs = {
  *
  * @param userId - `user_id` of the user
  * @param selectQuery - Optional select query to be used, default is `"*"`
+ * @param includeReplies - Optional boolean to include replies from the user, default is `true`
  * @returns if there is tweet with the given `user_id` and `tweet_id`, returns the
  * `tweet object` based on `selectQuery`, else returns `null`
  */
 export const getAllTweetsFromUser = async <T>({
   selectQuery = "*",
   userId,
+  includeReplies = true,
 }: GetALlTweetsFromUserArgs) => {
-  const tweetResult = await supabase
+  let tweetQuery = supabase
     .from<DbTweets>("tweets")
     .select(selectQuery)
     .eq("user_id", userId)
     .order("created_at", { ascending: false });
+
+  if (!includeReplies) {
+    tweetQuery = tweetQuery.is("replied_to", null);
+  }
+
+  const tweetResult = await tweetQuery;
 
   if (tweetResult.error) {
     // There is some error in getting tweetst

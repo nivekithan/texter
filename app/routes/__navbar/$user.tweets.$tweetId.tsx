@@ -128,9 +128,9 @@ export const loader: LoaderFunction = async ({ request, params }) => {
         return { type: "error", error: "Tweet not found" };
       }
 
-      const userName = await getTweetUserName(repliesResult.tweet_id);
+      const tweetUserName = await getTweetUserName(repliesResult.tweet_id);
 
-      if (userName === null) {
+      if (tweetUserName === null) {
         return { type: "error", error: "User not found" };
       }
 
@@ -139,7 +139,7 @@ export const loader: LoaderFunction = async ({ request, params }) => {
         tweet: {
           message: repliesResult.message,
           tweet_id: repliesResult.tweet_id,
-          userName,
+          userName: tweetUserName,
           // Since we are finding the replies for the tweet from the user, we can set userName
           // to that userName without needing to fetch it from db
           replied_to: userName,

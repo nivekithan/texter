@@ -19,26 +19,36 @@ export const Tweet = ({
   repliedTo,
   likesCount,
   relpiesCount,
-}: TweetProps) => { 
+}: TweetProps) => {
   const userUrl = `${AppUrl.home}${userName}`;
   const tweetUrl = `${AppUrl.home}${userName}/tweets/${tweetId}`;
 
   return (
-    <div className="p-3 flex flex-col gap-y-3">
-      <div className="flex flex-col">
-        <Link to={userUrl} className="font-bold hover:underline">
-          {userName}
-        </Link>
-        {repliedTo ? <TweetReplyingTo repliedTo={repliedTo} /> : null}
-      </div>
-      <Link to={tweetUrl}>
-        <p className="whitespace-pre-line text-sm">{message}</p>
+    <div className="flex p-3 gap-x-2">
+      <Link to={userUrl}>
+        <div className="w-[50px] h-[50px] rounded-full bg-texter-blue">
+          {/* Profile Picture */}
+        </div>
       </Link>
-      <TweetOptions
-        likesCount={likesCount}
-        repliesCount={relpiesCount}
-        tweetUrl={tweetUrl}
-      />
+
+      <div className="flex flex-col gap-y-3">
+        <div className="flex gap-x-4">
+          <div className="flex flex-col">
+            <Link to={userUrl} className="font-bold hover:underline">
+              {userName}
+            </Link>
+            {repliedTo ? <TweetReplyingTo repliedTo={repliedTo} /> : null}
+          </div>
+        </div>
+        <Link to={tweetUrl}>
+          <p className="whitespace-pre-line text-sm">{message}</p>
+        </Link>
+        <TweetOptions
+          likesCount={likesCount}
+          repliesCount={relpiesCount}
+          tweetUrl={tweetUrl}
+        />
+      </div>
     </div>
   );
 };

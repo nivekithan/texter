@@ -2,7 +2,8 @@ import type { LoaderFunction } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import { getUserId } from "~/server/session.server";
-import { DbTweets, DbUser, getTweetUserName } from "~/server/supabase.server";
+import type { DbTweets, DbUser} from "~/server/supabase.server";
+import { getTweetUserName } from "~/server/supabase.server";
 import { getAllTweetsFromUser } from "~/server/supabase.server";
 import { getUserOfUserName } from "~/server/supabase.server";
 import { AppUrl } from "~/utils/url";
@@ -56,22 +57,26 @@ export const loader: LoaderFunction = async ({ request, params }) => {
   >({
     userId,
     selectQuery: allTweetsSelectQuery,
-    includeReplies: false, // Do not include replies
   });
-
   if (allTweets === null) {
     return json<LoaderData>({ error: "Tweets not found", type: "error" });
   }
 
-  const tweetsWithRepliesCount = allTweets.map((reply) => {
-    return {
-      userName,
-      tweetId: reply.tweet_id,
-      message: reply.message,
-      repliesCount: reply.replies.length,
-      replied_to: undefined,
-    };
-  });
+  const tweetsWithRepliesCount = await Promise.all(
+    allTweets.map(async (reply) => {
+      const repliedTo = reply.replied_to
+        ? await getTweetUserName(reply.replied_to)
+        : null;
+
+      return {
+        userName,
+        tweetId: reply.tweet_id,
+        message: reply.message,
+        repliesCount: reply.replies.length,
+        repliedTo: repliedTo ?? undefined,
+      };
+    })
+  );
 
   return json<LoaderData>({ type: "success", tweets: tweetsWithRepliesCount });
 };
@@ -86,7 +91,6 @@ export default function TweetsFromUser() {
       <ol>
         {loaderData.tweets.map(
           ({ message, repliesCount, tweetId, userName, repliedTo }) => {
-
             return (
               <li key={tweetId} className="border-b border-gray-600">
                 <Tweet

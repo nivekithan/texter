@@ -37,11 +37,20 @@ export const MainTweet = ({
     <div>
       <div className="p-4">
         <div className="border-b border-gray-600 pb-8 flex flex-col gap-y-4">
-          <div className="flex flex-col gap-y-1">
-            <Link to={userUrl} className="text hover:underline">
-              {userName}
+          <div className="flex gap-x-2 items-center">
+            <Link to={userUrl}>
+              <div className="w-[50px] h-[50px] rounded-full bg-texter-blue">
+                {/* Profile Picture */}
+              </div>
             </Link>
-            {replied_to ? <MainTweetReplyingTo repliedTo={replied_to} /> : null}
+            <div className="flex flex-col gap-y-1">
+              <Link to={userUrl} className="text hover:underline">
+                {userName}
+              </Link>
+              {replied_to ? (
+                <MainTweetReplyingTo repliedTo={replied_to} />
+              ) : null}
+            </div>
           </div>
           <p className="whitespace-pre-line text-xl">{message}</p>
         </div>
@@ -54,7 +63,11 @@ export const MainTweet = ({
         </div>
       </div>
       <div className="border-b border-gray-600 ">
-        <TweetYourReply ref={textAreaRef} errorMessage={errorMessage} />
+        <TweetYourReply
+          ref={textAreaRef}
+          errorMessage={errorMessage}
+          userUrl={userUrl}
+        />
       </div>
     </div>
   );
@@ -133,12 +146,13 @@ const MainTweetOptions = ({ onReplyClick }: MainTweetOptionsProps) => {
 
 type TweetYourReplyProps = {
   errorMessage?: string;
+  userUrl: string;
 };
 
 const TweetYourReply = React.forwardRef<
   HTMLTextAreaElement,
   TweetYourReplyProps
->(({ errorMessage }, ref) => {
+>(({ errorMessage, userUrl }, ref) => {
   return (
     <div className="flex flex-col gap-y-2">
       <TexterTextArea
@@ -146,6 +160,8 @@ const TweetYourReply = React.forwardRef<
         placeholder="Tweet your reply"
         ref={ref}
         errorMessage={errorMessage}
+        label="Your Reply"
+        userUrl={userUrl}
       />
       <div className="flex justify-end p-4">
         <button

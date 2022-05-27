@@ -4,9 +4,10 @@ import { TexterTextArea } from "./texterTextArea";
 
 export type SendTweetProps = {
   error?: string;
+  userUrl: string;
 };
 
-export const SendTweet = ({ error }: SendTweetProps) => {
+export const SendTweet = ({ error, userUrl }: SendTweetProps) => {
   const transition = useTransition();
   const formRef = useRef<HTMLFormElement | null>(null);
   const isSubmiting = transition.state === "submitting";
@@ -24,6 +25,8 @@ export const SendTweet = ({ error }: SendTweetProps) => {
         placeholder="Whats Happening?"
         errorMessage={error}
         autoFocus
+        label="Send Tweet"
+        userUrl={userUrl}
       />
       <div className="flex justify-end mr-3">
         <button

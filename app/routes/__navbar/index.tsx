@@ -1,13 +1,13 @@
 import { json, redirect } from "@remix-run/node";
-import type {
-  LoaderFunction,
-  ActionFunction,
-} from "@remix-run/node";
+import type { LoaderFunction, ActionFunction } from "@remix-run/node";
 import {
   getUserId,
+  getUserSession,
+  sessionStorage,
 } from "~/server/session.server";
 import { AppUrl } from "~/utils/url";
-import { getTweetUserName } from "~/server/supabase.server";
+import type { DbUser } from "~/server/supabase.server";
+import { getTweetUserName, getUserOfUserId } from "~/server/supabase.server";
 import { getLatestTweets } from "~/server/supabase.server";
 import { insertTweetFromUser } from "~/server/supabase.server";
 import { useActionData, useLoaderData } from "@remix-run/react";
@@ -22,10 +22,52 @@ type LoaderData = {
     repliedTo?: string;
     repliesCount: number;
   }[];
+  loggedInUserName: string;
 };
 
 export const loader: LoaderFunction = async ({ request }) => {
-  
+  const loggedInUserId = await getUserId(request);
+
+  if (loggedInUserId === null) {
+    const requestUrl = new URL(request.url);
+
+    const searchParams = new URLSearchParams();
+
+    // Set redirectTo param so that once the user logged in we can
+    // redirect to the page they were on
+    searchParams.set("redirectTo", requestUrl.pathname);
+
+    const finalUrl = `${AppUrl.join}?${searchParams}`;
+    return redirect(finalUrl);
+  }
+
+  const loggedInUsernameQuery = await getUserOfUserId<
+    Pick<DbUser, "user_name">
+  >(loggedInUserId);
+
+  if (loggedInUsernameQuery === null) {
+    // There is no user with that name
+
+    const userSession = await getUserSession(request);
+
+    const requestUrl = new URL(request.url);
+
+    const searchParams = new URLSearchParams();
+
+    // Set redirectTo param so that once the user logged in we can
+    // redirect to the page they were on
+    searchParams.set("redirectTo", requestUrl.pathname);
+
+    const finalUrl = `${AppUrl.join}?${searchParams}`;
+    return redirect(finalUrl, {
+      headers: {
+        "Set-Cookie": await sessionStorage.destroySession(userSession),
+      },
+    });
+  }
+
+  const { user_name: loggedInUserName } = loggedInUsernameQuery;
+
   const latest10Tweets = await getLatestTweets<{
     message: string;
     tweet_id: string;
@@ -38,7 +80,7 @@ export const loader: LoaderFunction = async ({ request }) => {
   });
   if (latest10Tweets === null) {
     // Something is wrong with getting data from database
-    return json<LoaderData>({ tweets: [] });
+    return json<LoaderData>({ tweets: [], loggedInUserName });
   }
 
   const latestTweetsWithRepliedTo = await Promise.all(
@@ -60,6 +102,7 @@ export const loader: LoaderFunction = async ({ request }) => {
 
   return json<LoaderData>({
     tweets: latestTweetsWithRepliedTo,
+    loggedInUserName,
   });
 };
 
@@ -110,7 +153,8 @@ export const action: ActionFunction = async ({ request }) => {
 };
 
 export default function () {
-  const { tweets } = useLoaderData<LoaderData>();
+  const { tweets, loggedInUserName } = useLoaderData<LoaderData>();
+  const userUrl = `${AppUrl.home}${loggedInUserName}`;
   const actionData = useActionData<ActionData>();
   return (
     <>
@@ -120,7 +164,7 @@ export default function () {
 
       <div className="max-w-[600px] border-r border-gray-600 min-h-screen">
         <div className="border-b border-gray-600">
-          <SendTweet error={actionData?.error} />
+          <SendTweet error={actionData?.error} userUrl={userUrl} />
         </div>
         <ol>
           {tweets.map(

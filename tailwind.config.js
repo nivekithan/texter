@@ -9,6 +9,7 @@ module.exports = {
         "like-red": "hsl(332, 94.9%, 53.5%)",
         "red-error": "hsl(356, 90%, 54%)",
         "texter-gray": "rgb(113, 118, 123)",
+        "texter-gray-dark" : "rgb(51, 54, 57)"
       },
     },
 

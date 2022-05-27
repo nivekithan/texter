@@ -29,8 +29,6 @@ export const FormButton = ({
 }: FormButtonProps) => {
   const fetcher = useFetcher();
 
-  console.log(navigate);
-
   return (
     <>
       {navigate ? (

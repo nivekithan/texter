@@ -34,6 +34,7 @@ export const NavBar = ({ userName }: NavBarProps) => {
         <FormButton
           action={`/logout`}
           method="post"
+          navigate={false}
           className="w-full border-inherit border border-gray-300 hover:border-texter-blue rounded-full px-8 py-3 text-texter-blue"
         >
           Log out

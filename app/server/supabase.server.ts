@@ -37,6 +37,7 @@ export type DbTweets = {
 export type DbUserLikedTweet = {
   user_id: string;
   tweet_id: string;
+  created_at: string;
 };
 
 /**
@@ -491,4 +492,35 @@ export const hasUserLikedTweet = async ({
   // 1 but if the user have not liked the tweet, then the length would be
   // 0
   return query.data.length === 1;
+};
+
+export type GetTweetsUserHasLikedArgs = {
+  userId: string;
+  selectQuery: string;
+};
+
+/**
+ * Gets all the tweet the user has liked
+ *
+ * @param userId - `user_id` of the user
+ * @param selectQuery - select query to be used while sending request
+ * @returns
+ */
+
+export const getTweetsUserHasLiked = async <T>({
+  userId,
+  selectQuery,
+}: GetTweetsUserHasLikedArgs) => {
+  const query = await supabase
+    .from<DbUserLikedTweet>("user_liked_tweet")
+    .select(selectQuery)
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false });
+
+  if (query.error) {
+    // Something is wrong with the query
+    return null;
+  }
+
+  return query.data as unknown as T[];
 };

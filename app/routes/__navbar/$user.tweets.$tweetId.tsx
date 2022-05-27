@@ -12,6 +12,7 @@ import { MainTweet } from "~/components/mainTweet";
 import { Tweet } from "~/components/tweet";
 import { getUserId } from "~/server/session.server";
 import type { DbTweets, DbUser } from "~/server/supabase.server";
+import { getLikeCount, hasUserLikedTweet } from "~/server/supabase.server";
 import { insertTweetReplyFromUser } from "~/server/supabase.server";
 import { getTweetUserName } from "~/server/supabase.server";
 import { getTweet } from "~/server/supabase.server";
@@ -26,6 +27,8 @@ type LoaderTweet = {
   message: string;
   replied_to: string | null; // Username of the replied_to user
   replies: TweetReply[];
+  likesCount: number;
+  likeActive: boolean;
 };
 
 type TweetReply =
@@ -37,6 +40,8 @@ type TweetReply =
         replied_to: string | null;
         replyCount: number;
         userName: string;
+        likesCount: number;
+        likeActive: boolean;
       };
     }
   | { type: "error"; error: "User not found" | "Tweet not found" };
@@ -120,7 +125,14 @@ export const loader: LoaderFunction = async ({ request, params }) => {
     })
   );
 
-  const tweetWithUserName = { ...tweet, userName: userName };
+  const tweetWithUserName = {
+    ...tweet,
+    userName: userName,
+    likesCount: (await getLikeCount({ tweetId: tweet.tweet_id })) ?? 0,
+    likeActive:
+      (await hasUserLikedTweet({ tweetId: tweetId, userId: loggedInUserId })) ??
+      false,
+  };
 
   const replies: TweetReply[] = await Promise.all(
     repliesResult.map(async (repliesResult): Promise<TweetReply> => {
@@ -129,6 +141,16 @@ export const loader: LoaderFunction = async ({ request, params }) => {
       }
 
       const tweetUserName = await getTweetUserName(repliesResult.tweet_id);
+      const likesCount =
+        (await getLikeCount({
+          tweetId: repliesResult.tweet_id,
+        })) ?? 0;
+
+      const likeActive =
+        (await hasUserLikedTweet({
+          tweetId: repliesResult.tweet_id,
+          userId: loggedInUserId,
+        })) ?? false;
 
       if (tweetUserName === null) {
         return { type: "error", error: "User not found" };
@@ -144,6 +166,8 @@ export const loader: LoaderFunction = async ({ request, params }) => {
           // to that userName without needing to fetch it from db
           replied_to: userName,
           replyCount: repliesResult.replies.length,
+          likesCount: likesCount,
+          likeActive: likeActive,
         },
       };
     })
@@ -220,32 +244,50 @@ export default function TweetPage() {
   if (loaderData.type === "error") return <p>{loaderData.error}</p>;
 
   const {
-    tweet: { message, replied_to, replies, userName },
+    tweet: {
+      message,
+      replied_to,
+      replies,
+      userName,
+      likesCount,
+      likeActive,
+      tweet_id,
+    },
   } = loaderData;
   return (
     <div className="max-w-[600px] border-r border-r-gray-600 min-h-screen">
       <div className="sticky top-0 p-4 bg-black font-bold text-xl shadow bg-opacity-80">
         Thread
       </div>
-      <Form method="post" ref={formRef}>
+      <div>
         <MainTweet
           message={message}
           replied_to={replied_to}
           repliesCount={replies.length}
           userName={userName}
-          likesCount={0}
           errorMessage={actionData?.errorMessage}
+          likesCount={likesCount}
+          likeActive={likeActive}
+          tweetId={tweet_id}
         />
         {replies.map((reply) => {
           if (reply.type === "error") return <div>{reply.error}</div>;
 
-          const { message, replied_to, replyCount, tweet_id, userName } =
-            reply.tweet;
+          const {
+            message,
+            replied_to,
+            replyCount,
+            tweet_id,
+            userName,
+            likeActive,
+            likesCount,
+          } = reply.tweet;
 
           return (
             <div key={tweet_id} className="border-b border-gray-600">
               <Tweet
-                likesCount={0}
+                likesCount={likesCount}
+                likeActive={likeActive}
                 message={message}
                 relpiesCount={replyCount}
                 tweetId={tweet_id}
@@ -255,7 +297,7 @@ export default function TweetPage() {
             </div>
           );
         })}
-      </Form>
+      </div>
     </div>
   );
 }

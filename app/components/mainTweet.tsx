@@ -1,8 +1,10 @@
-import { Link } from "@remix-run/react";
+import { Form, Link, useTransition } from "@remix-run/react";
 import React, { useRef } from "react";
+import { useEffect } from "react";
 import { AiOutlineHeart } from "react-icons/ai";
 import { FaRegComment } from "react-icons/fa";
 import { AppUrl } from "~/utils/url";
+import { FormButton } from "./formButton";
 import { TexterTextArea } from "./texterTextArea";
 
 export type MainTweetProps = {
@@ -12,6 +14,8 @@ export type MainTweetProps = {
   repliesCount: number;
   likesCount: number;
   errorMessage?: string;
+  likeActive: boolean;
+  tweetId: string;
 };
 
 export const MainTweet = ({
@@ -21,9 +25,18 @@ export const MainTweet = ({
   userName,
   likesCount,
   errorMessage,
+  likeActive,
+  tweetId,
 }: MainTweetProps) => {
-  const userUrl = `${AppUrl.home}${userName}`;
+  const transition = useTransition();
+
   const textAreaRef = useRef<HTMLTextAreaElement | null>(null);
+  const formRef = useRef<HTMLFormElement | null>(null);
+
+  const isSubmitting = transition.state === "submitting";
+
+  const userUrl = `${AppUrl.home}${userName}`;
+  const tweetUrl = `${AppUrl.home}${userName}/tweets/${tweetId}`;
 
   const onReplyClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
@@ -32,6 +45,12 @@ export const MainTweet = ({
       textAreaRef.current.focus();
     }
   };
+
+  useEffect(() => {
+    if (!isSubmitting) {
+      formRef.current?.reset();
+    }
+  }, [isSubmitting]);
 
   return (
     <div>
@@ -59,16 +78,20 @@ export const MainTweet = ({
           <MainTweetInfo value={likesCount} name="Likes" />
         </div>
         <div className="border-b border-gray-600 py-2">
-          <MainTweetOptions onReplyClick={onReplyClick} />
+          <MainTweetOptions
+            onReplyClick={onReplyClick}
+            likeActive={likeActive}
+            tweetUrl={tweetUrl}
+          />
         </div>
       </div>
-      <div className="border-b border-gray-600 ">
+      <Form method="post" className="border-b border-gray-600" ref={formRef}>
         <TweetYourReply
           ref={textAreaRef}
           errorMessage={errorMessage}
           userUrl={userUrl}
         />
-      </div>
+      </Form>
     </div>
   );
 };
@@ -107,9 +130,17 @@ const MainTweetInfo = ({ name, value }: MainTweetInfoProps) => {
 
 type MainTweetOptionsProps = {
   onReplyClick: (e: React.MouseEvent<HTMLButtonElement>) => void;
+  likeActive: boolean;
+  tweetUrl: string;
 };
 
-const MainTweetOptions = ({ onReplyClick }: MainTweetOptionsProps) => {
+const MainTweetOptions = ({
+  onReplyClick,
+  likeActive,
+  tweetUrl,
+}: MainTweetOptionsProps) => {
+  const likeUrl = `${tweetUrl}/like`;
+
   return (
     <ul className="flex justify-around">
       <li>
@@ -125,12 +156,21 @@ const MainTweetOptions = ({ onReplyClick }: MainTweetOptionsProps) => {
         </button>
       </li>
       <li>
-        <button className="group p-3 rounded-full hover:bg-like-red hover:bg-opacity-20">
+        <FormButton
+          action={likeUrl}
+          method="post"
+          navigate={false}
+          name="actionType"
+          value={likeActive ? "unlike" : "like"}
+          className="group p-3 rounded-full hover:bg-like-red hover:bg-opacity-20"
+        >
           <AiOutlineHeart
             size="20px"
-            className="fill-gray-500 group-hover:fill-like-red"
+            className={`group-hover:fill-like-red ${
+              likeActive ? "fill-like-red" : "fill-gray-500"
+            }`}
           />
-        </button>
+        </FormButton>
       </li>
       <li>
         <button className="group p-3 rounded-full hover:bg-like-red hover:bg-opacity-20">

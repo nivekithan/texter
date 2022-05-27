@@ -1,9 +1,10 @@
-import { Form } from "@remix-run/react";
+import { Form, useFetcher } from "@remix-run/react";
 import React from "react";
 
 export type FormButtonProps = {
   action?: string;
   method?: "get" | "post";
+  navigate?: boolean;
 
   children: React.ReactNode;
 } & React.ButtonHTMLAttributes<HTMLButtonElement>;
@@ -23,11 +24,24 @@ export const FormButton = ({
   children,
   action,
   method,
+  navigate,
   ...props
 }: FormButtonProps) => {
+  const fetcher = useFetcher();
+
+  console.log(navigate);
+
   return (
-    <Form className="contents" action={action} method={method}>
-      <button {...props}>{children} </button>
-    </Form>
+    <>
+      {navigate ? (
+        <Form className="contents" action={action} method={method}>
+          <button {...props}>{children} </button>
+        </Form>
+      ) : (
+        <fetcher.Form className="contents" action={action} method={method}>
+          <button {...props}>{children} </button>
+        </fetcher.Form>
+      )}
+    </>
   );
 };

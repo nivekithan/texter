@@ -578,6 +578,10 @@ Ensure the default browser behavior of the `hidden` attribute.
   height: 100%;
 }
 
+.h-\[50px\] {
+  height: 50px;
+}
+
 .h-\[200px\] {
   height: 200px;
 }
@@ -586,24 +590,16 @@ Ensure the default browser behavior of the `hidden` attribute.
   height: 150px;
 }
 
-.h-\[100px\] {
-  height: 100px;
-}
-
-.h-\[50px\] {
-  height: 50px;
-}
-
-.h-\[75px\] {
-  height: 75px;
-}
-
 .min-h-screen {
   min-height: 100vh;
 }
 
 .min-h-\[40px\] {
   min-height: 40px;
+}
+
+.w-\[50px\] {
+  width: 50px;
 }
 
 .w-full {
@@ -620,26 +616,6 @@ Ensure the default browser behavior of the `hidden` attribute.
 
 .w-\[150px\] {
   width: 150px;
-}
-
-.w-\[\] {
-  width: ;
-}
-
-.w-\[100px\] {
-  width: 100px;
-}
-
-.w-\[50px\] {
-  width: 50px;
-}
-
-.w-\[750px\] {
-  width: 750px;
-}
-
-.w-\[75px\] {
-  width: 75px;
 }
 
 .min-w-\[4px\] {
@@ -698,6 +674,11 @@ Ensure the default browser behavior of the `hidden` attribute.
   row-gap: 1rem;
 }
 
+.gap-x-2 {
+  -moz-column-gap: 0.5rem;
+       column-gap: 0.5rem;
+}
+
 .gap-y-1 {
   row-gap: 0.25rem;
 }
@@ -739,11 +720,6 @@ Ensure the default browser behavior of the `hidden` attribute.
 
 .gap-y-8 {
   row-gap: 2rem;
-}
-
-.gap-x-2 {
-  -moz-column-gap: 0.5rem;
-       column-gap: 0.5rem;
 }
 
 .whitespace-pre-line {
@@ -833,6 +809,10 @@ Ensure the default browser behavior of the `hidden` attribute.
 
 .fill-gray-500 {
   fill: #6b7280;
+}
+
+.fill-like-red {
+  fill: hsl(332, 94.9%, 53.5%);
 }
 
 .fill-gray-400 {
@@ -997,6 +977,11 @@ Ensure the default browser behavior of the `hidden` attribute.
 .text-gray-400 {
   --tw-text-opacity: 1;
   color: rgb(156 163 175 / var(--tw-text-opacity));
+}
+
+.text-like-red {
+  --tw-text-opacity: 1;
+  color: hsl(332 94.9% 53.5% / var(--tw-text-opacity));
 }
 
 .shadow {

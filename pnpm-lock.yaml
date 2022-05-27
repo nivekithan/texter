@@ -15,6 +15,8 @@ specifiers:
   autoprefixer: ^10.4.7
   bcryptjs: ^2.4.3
   concurrently: ^7.2.0
+  dotenv: ^16.0.1
+  esbuild-register: ^3.3.2
   eslint: ^8.15.0
   eslint-config-prettier: ^8.5.0
   nanoid: ^3.3.4
@@ -48,6 +50,8 @@ devDependencies:
   '@types/react-dom': 17.0.17
   autoprefixer: 10.4.7_postcss@8.4.14
   concurrently: 7.2.0
+  dotenv: 16.0.1
+  esbuild-register: 3.3.2
   eslint: 8.15.0
   eslint-config-prettier: 8.5.0_eslint@8.15.0
   postcss: 8.4.14
@@ -2641,6 +2645,12 @@ packages:
       deno-importmap: 0.1.6
     transitivePeerDependencies:
       - encoding
+    dev: true
+
+  /esbuild-register/3.3.2:
+    resolution: {integrity: sha512-jceAtTO6zxPmCfSD5cBb3rgIK1vmuqCKYwgylHiS1BF4pq0jJiJb4K2QMuqF4BEw7XDBRatYzip0upyTzfkgsQ==}
+    peerDependencies:
+      esbuild: '>=0.12 <1'
     dev: true
 
   /esbuild-sunos-64/0.14.22:

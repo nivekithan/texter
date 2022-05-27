@@ -2,7 +2,8 @@ import type { LoaderFunction } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import { getUserId } from "~/server/session.server";
-import { DbTweets, DbUser, getTweetUserName } from "~/server/supabase.server";
+import { DbTweets, DbUser, hasUserLikedTweet } from "~/server/supabase.server";
+import { getLikeCount, getTweetUserName } from "~/server/supabase.server";
 import { getAllTweetsFromUser } from "~/server/supabase.server";
 import { getUserOfUserName } from "~/server/supabase.server";
 import { AppUrl } from "~/utils/url";
@@ -18,6 +19,8 @@ type LoaderData =
         tweetId: string;
         repliedTo?: string;
         repliesCount: number;
+        likesCount: number;
+        likeActive: boolean;
       }[];
     }
   | { type: "error"; error: "User not found" | "Tweets not found" };
@@ -63,15 +66,23 @@ export const loader: LoaderFunction = async ({ request, params }) => {
     return json<LoaderData>({ error: "Tweets not found", type: "error" });
   }
 
-  const tweetsWithRepliesCount = allTweets.map((reply) => {
-    return {
-      userName,
-      tweetId: reply.tweet_id,
-      message: reply.message,
-      repliesCount: reply.replies.length,
-      replied_to: undefined,
-    };
-  });
+  const tweetsWithRepliesCount = await Promise.all(
+    allTweets.map(async (reply) => {
+      return {
+        userName,
+        tweetId: reply.tweet_id,
+        message: reply.message,
+        repliesCount: reply.replies.length,
+        replied_to: undefined,
+        likesCount: (await getLikeCount({ tweetId: reply.tweet_id })) ?? 0,
+        likeActive:
+          (await hasUserLikedTweet({
+            userId: loggedInUserId,
+            tweetId: reply.tweet_id,
+          })) ?? false,
+      };
+    })
+  );
 
   return json<LoaderData>({ type: "success", tweets: tweetsWithRepliesCount });
 };
@@ -85,17 +96,25 @@ export default function TweetsFromUser() {
     <div>
       <ol>
         {loaderData.tweets.map(
-          ({ message, repliesCount, tweetId, userName, repliedTo }) => {
-
+          ({
+            message,
+            repliesCount,
+            tweetId,
+            userName,
+            repliedTo,
+            likesCount,
+            likeActive,
+          }) => {
             return (
               <li key={tweetId} className="border-b border-gray-600">
                 <Tweet
-                  likesCount={0}
+                  likesCount={likesCount}
                   message={message}
                   relpiesCount={repliesCount}
                   userName={userName}
                   tweetId={tweetId}
                   repliedTo={repliedTo}
+                  likeActive={likeActive}
                 />
               </li>
             );

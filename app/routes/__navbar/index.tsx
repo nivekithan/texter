@@ -7,6 +7,7 @@ import {
 } from "~/server/session.server";
 import { AppUrl } from "~/utils/url";
 import type { DbUser } from "~/server/supabase.server";
+import { getLikeCount, hasUserLikedTweet } from "~/server/supabase.server";
 import { getTweetUserName, getUserOfUserId } from "~/server/supabase.server";
 import { getLatestTweets } from "~/server/supabase.server";
 import { insertTweetFromUser } from "~/server/supabase.server";
@@ -21,6 +22,8 @@ type LoaderData = {
     tweetId: string;
     repliedTo?: string;
     repliesCount: number;
+    likesCount: number;
+    likeActive: boolean;
   }[];
   loggedInUserName: string;
 };
@@ -95,6 +98,12 @@ export const loader: LoaderFunction = async ({ request }) => {
               ? undefined
               : (await getTweetUserName(replied_to)) ?? undefined,
           repliesCount: replies.length,
+          likesCount: (await getLikeCount({ tweetId: tweet_id })) ?? 0,
+          likeActive:
+            (await hasUserLikedTweet({
+              userId: loggedInUserId,
+              tweetId: tweet_id,
+            })) ?? false,
         };
       }
     )
@@ -168,7 +177,18 @@ export default function () {
         </div>
         <ol>
           {tweets.map(
-            ({ message, tweetId, userName, repliedTo, repliesCount }, i) => {
+            (
+              {
+                message,
+                tweetId,
+                userName,
+                repliedTo,
+                repliesCount,
+                likesCount,
+                likeActive,
+              },
+              i
+            ) => {
               return (
                 <li key={tweetId} className="border-b border-gray-600">
                   <Tweet
@@ -177,7 +197,8 @@ export default function () {
                     userName={userName}
                     repliedTo={repliedTo}
                     relpiesCount={repliesCount}
-                    likesCount={0}
+                    likesCount={likesCount}
+                    likeActive={likeActive}
                   />
                 </li>
               );

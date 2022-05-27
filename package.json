@@ -9,7 +9,8 @@
     "build:css": "tailwindcss -m -i ./styles/app.css -o app/styles/app.css",
     "dev": "concurrently \"npm run dev:css\" \"remix dev\"",
     "dev:css": "tailwindcss -w -i ./styles/app.css -o app/styles/app.css",
-    "start": "remix-serve build"
+    "start": "remix-serve build",
+    "seed:db": "node --require esbuild-register --require dotenv/config supabase-local/supabase/seed.ts"
   },
   "dependencies": {
     "@remix-run/node": "^1.4.3",
@@ -32,6 +33,8 @@
     "@types/react-dom": "^17.0.17",
     "autoprefixer": "^10.4.7",
     "concurrently": "^7.2.0",
+    "dotenv": "^16.0.1",
+    "esbuild-register": "^3.3.2",
     "eslint": "^8.15.0",
     "eslint-config-prettier": "^8.5.0",
     "postcss": "^8.4.14",

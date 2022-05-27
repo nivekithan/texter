@@ -2,7 +2,12 @@ import type { LoaderFunction } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import { getUserId } from "~/server/session.server";
-import type { DbTweets, DbUser} from "~/server/supabase.server";
+import {
+  DbTweets,
+  DbUser,
+  getLikeCount,
+  hasUserLikedTweet,
+} from "~/server/supabase.server";
 import { getTweetUserName } from "~/server/supabase.server";
 import { getAllTweetsFromUser } from "~/server/supabase.server";
 import { getUserOfUserName } from "~/server/supabase.server";
@@ -19,6 +24,8 @@ type LoaderData =
         tweetId: string;
         repliedTo?: string;
         repliesCount: number;
+        likesCount: number;
+        likeActive: boolean;
       }[];
     }
   | { type: "error"; error: "User not found" | "Tweets not found" };
@@ -68,12 +75,21 @@ export const loader: LoaderFunction = async ({ request, params }) => {
         ? await getTweetUserName(reply.replied_to)
         : null;
 
+      const likesCount = (await getLikeCount({ tweetId: reply.tweet_id })) ?? 0;
+      const likeActive =
+        (await hasUserLikedTweet({
+          userId: loggedInUserId,
+          tweetId: reply.tweet_id,
+        })) ?? false;
+
       return {
         userName,
         tweetId: reply.tweet_id,
         message: reply.message,
         repliesCount: reply.replies.length,
         repliedTo: repliedTo ?? undefined,
+        likesCount: likesCount,
+        likeActive: likeActive,
       };
     })
   );
@@ -90,16 +106,25 @@ export default function TweetsFromUser() {
     <div>
       <ol>
         {loaderData.tweets.map(
-          ({ message, repliesCount, tweetId, userName, repliedTo }) => {
+          ({
+            message,
+            repliesCount,
+            tweetId,
+            userName,
+            repliedTo,
+            likesCount,
+            likeActive,
+          }) => {
             return (
               <li key={tweetId} className="border-b border-gray-600">
                 <Tweet
-                  likesCount={0}
+                  likesCount={likesCount}
                   message={message}
                   relpiesCount={repliesCount}
                   userName={userName}
                   tweetId={tweetId}
                   repliedTo={repliedTo}
+                  likeActive={likeActive}
                 />
               </li>
             );

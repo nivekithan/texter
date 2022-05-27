@@ -31,6 +31,15 @@ export type DbTweets = {
 };
 
 /**
+ * Represents `user_liked_tweet` table in the tablebase
+ */
+
+export type DbUserLikedTweet = {
+  user_id: string;
+  tweet_id: string;
+};
+
+/**
  * Each tweet is belongs to a user, through this function
  * you can get userName of the user who send that tweet
  *
@@ -227,6 +236,14 @@ export type GetLatestTweetsArgs = {
   selectQuery: string;
 };
 
+/**
+ * Returns the latest tweets from the database
+ *
+ *
+ * @param count - count of tweets to be returned
+ * @param selectQuery - Select query to be used while sending request
+ * @returns `Tweet[]` based on query if the opeartion is successfull, else returns null
+ */
 export const getLatestTweets = async <T>({
   count,
   selectQuery,
@@ -314,6 +331,15 @@ type InsertTweetReplyFromUserArgs = {
   repliedTo: string;
 };
 
+/**
+ * Inserts a reply from the user to the tweet
+ *
+ *
+ * @param message - Reply message
+ * @param repliedTo - TweetId of the tweet to which the reply is to be made
+ * @param userId - UserId of the user who made the reply
+ * @returns if the tweet is inserted, returns `undefined`, else returns `null`
+ */
 export const insertTweetReplyFromUser = async ({
   message,
   repliedTo,
@@ -341,4 +367,128 @@ export const insertTweetReplyFromUser = async ({
     // There is some error while adding tweet to replies list
     return null;
   }
+};
+
+export type UserLikedTweetArgs = {
+  userId: string;
+  tweetId: string;
+};
+
+/**
+ *
+ * Adds to the db that the user with the `userId` has liked the
+ * tweet with the `tweetId`
+ *
+ * @param userId - `user_id` of the user who have liked the tweet
+ * @param tweetId - `tweet_id` of the tweet which got liked
+ * @returns if the operation is successfull returns `DbUserLikedTweet` object else returns
+ * `null`
+ */
+export const userLikedTweet = async ({
+  userId,
+  tweetId,
+}: UserLikedTweetArgs) => {
+  const query = await supabase
+    .from<DbUserLikedTweet>("user_liked_tweet")
+    .insert({ user_id: userId, tweet_id: tweetId });
+
+  if (query.error || query.data.length === 0) {
+    // There is some error while adding tweet
+    return null;
+  }
+
+  const like = query.data[0]; // Only one like is added
+
+  return like;
+};
+
+/**
+ *
+ * Removes the like user has given to the tweet
+ *
+ * @param userId - `user_id` of the user who have unLiked the tweet
+ * @param tweetId - `tweet_id` of the tweet which got unLiked
+ * @returns if the operation is successfull returns `DbUserLikedTweet` object else returns
+ * `null`
+ */
+export const userUnLikedTweet = async ({
+  userId,
+  tweetId,
+}: UserLikedTweetArgs) => {
+  const query = await supabase
+    .from<DbUserLikedTweet>("user_liked_tweet")
+    .delete()
+    .eq("user_id", userId)
+    .eq("tweet_id", tweetId);
+
+  if (query.error || query.data.length === 0) {
+    // There is some error while adding tweet
+    return null;
+  }
+
+  const like = query.data[0]; // Only one like is added
+
+  return like;
+};
+
+export type GetLikeCountArgs = {
+  tweetId: string;
+};
+
+/**
+ *
+ * Gets the like count of the tweet with the `tweetId`
+ *
+ * @param tweetId - `tweet_id` of the tweet for which like count is to be returned
+ * @returns if the operation is successfull return the count or else returns null
+ */
+
+export const getLikeCount = async ({ tweetId }: GetLikeCountArgs) => {
+  const query = await supabase
+    .from<DbUserLikedTweet>("user_liked_tweet")
+    .select("created_at", { count: "exact" })
+    .eq("tweet_id", tweetId);
+
+  if (query.error) {
+    // Something went wrong with the request
+    return null;
+  }
+
+  return query.count ?? 0;
+};
+
+export type HasUserLikedTweetArgs = {
+  userId: string;
+  tweetId: string;
+};
+
+/**
+ * Finds out whether a user has liked a tweet or not
+ *
+ * @param userId - `user_id` of the user
+ * @param tweetId - `tweet_id` of the user
+ * @return if the operation is successfull return boolean noting whether user has
+ * liked that tweet or not else returns null
+ *
+ */
+
+export const hasUserLikedTweet = async ({
+  tweetId,
+  userId,
+}: HasUserLikedTweetArgs) => {
+  const query = await supabase
+    .from<DbUserLikedTweet>("user_liked_tweet")
+    .select("created_at")
+    .eq("tweet_id", tweetId)
+    .eq("user_id", userId);
+
+  if (query.error) {
+    // Something went wrong with the request
+    return null;
+  }
+
+  // If the user have liked the tweet, then the length would have been
+  // 1 but if the user have not liked the tweet, then the length would be
+  // 0
+  return query.data.length === 1;
 };

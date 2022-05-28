@@ -3,6 +3,7 @@ import { AppUrl } from "~/utils/url";
 import { FaRegComment } from "react-icons/fa";
 import { AiOutlineHeart } from "react-icons/ai";
 import { FormButton } from "./formButton";
+import { BsBookmarkPlus } from "react-icons/bs";
 
 export type TweetProps = {
   userName: string;
@@ -12,6 +13,8 @@ export type TweetProps = {
   relpiesCount: number;
   likesCount: number;
   likeActive: boolean;
+  bookmarkCount: number;
+  bookmarkActive: boolean;
 };
 
 export const Tweet = ({
@@ -22,6 +25,8 @@ export const Tweet = ({
   likesCount,
   relpiesCount,
   likeActive,
+  bookmarkCount,
+  bookmarkActive,
 }: TweetProps) => {
   const userUrl = `${AppUrl.home}${userName}`;
   const tweetUrl = `${AppUrl.home}${userName}/tweets/${tweetId}`;
@@ -51,6 +56,8 @@ export const Tweet = ({
           repliesCount={relpiesCount}
           likeActive={likeActive}
           tweetUrl={tweetUrl}
+          bookmarkActive={bookmarkActive}
+          bookmarkCount={bookmarkCount}
         />
       </div>
     </div>
@@ -76,6 +83,8 @@ type TweetOptionsProps = {
   likesCount: number;
   tweetUrl: string;
   likeActive: boolean;
+  bookmarkCount: number;
+  bookmarkActive: boolean;
 };
 
 const TweetOptions = ({
@@ -83,8 +92,11 @@ const TweetOptions = ({
   likesCount,
   tweetUrl,
   likeActive,
+  bookmarkActive,
+  bookmarkCount,
 }: TweetOptionsProps) => {
   const likeUrl = `${tweetUrl}/like`;
+  const bookmarkUrl = `${tweetUrl}/bookmark`;
 
   return (
     <ol className="flex gap-x-8 -ml-2">
@@ -125,6 +137,31 @@ const TweetOptions = ({
           }`}
         >
           {likesCount || null}
+        </span>
+      </li>
+      <li className=" flex items-center gap-x-4 group">
+        {/* Like */}
+        <FormButton
+          action={bookmarkUrl}
+          navigate={false}
+          method="post"
+          name="actionType"
+          value={bookmarkActive ? "removeBookmark" : "bookmark"}
+          className="group-hover:bg-like-red group-hover:bg-opacity-20 p-2 rounded-full"
+        >
+          <BsBookmarkPlus
+            size="15px"
+            className={`group-hover:fill-like-red ${
+              bookmarkActive ? "fill-like-red" : "fill-gray-400"
+            }`}
+          />
+        </FormButton>
+        <span
+          className={`text-xs group-hover:text-like-red ${
+            bookmarkActive ? "text-like-red" : "text-gray-400"
+          }`}
+        >
+          {bookmarkCount || null}
         </span>
       </li>
     </ol>

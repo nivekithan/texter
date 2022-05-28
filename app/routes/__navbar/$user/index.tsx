@@ -2,7 +2,13 @@ import type { LoaderFunction } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import { getUserId } from "~/server/session.server";
-import type { DbTweets, DbUser } from "~/server/supabase.server";
+import type {
+  DbTweets,
+  DbUser} from "~/server/supabase.server";
+import {
+  getBookmarkCount,
+  hasUserBookmarkedTweet,
+} from "~/server/supabase.server";
 import { hasUserLikedTweet } from "~/server/supabase.server";
 import { getLikeCount } from "~/server/supabase.server";
 import { getAllTweetsFromUser } from "~/server/supabase.server";
@@ -22,6 +28,8 @@ type LoaderData =
         repliesCount: number;
         likesCount: number;
         likeActive: boolean;
+        bookmarkActive: boolean;
+        bookmarkCount: number;
       }[];
     }
   | { type: "error"; error: "User not found" | "Tweets not found" };
@@ -81,6 +89,13 @@ export const loader: LoaderFunction = async ({ request, params }) => {
             userId: loggedInUserId,
             tweetId: reply.tweet_id,
           })) ?? false,
+        bookmarkCount:
+          (await getBookmarkCount({ tweetId: reply.tweet_id })) ?? 0,
+        bookmarkActive:
+          (await hasUserBookmarkedTweet({
+            userId: loggedInUserId,
+            tweetId: reply.tweet_id,
+          })) ?? false,
       };
     })
   );
@@ -105,6 +120,8 @@ export default function TweetsFromUser() {
             repliedTo,
             likesCount,
             likeActive,
+            bookmarkActive,
+            bookmarkCount,
           }) => {
             return (
               <li key={tweetId} className="border-b border-gray-600">
@@ -116,6 +133,8 @@ export default function TweetsFromUser() {
                   tweetId={tweetId}
                   repliedTo={repliedTo}
                   likeActive={likeActive}
+                  bookmarkActive={bookmarkActive}
+                  bookmarkCount={bookmarkCount}
                 />
               </li>
             );

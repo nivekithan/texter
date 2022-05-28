@@ -1,16 +1,18 @@
 import type { ActionFunction, LoaderFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
-import {
-  useActionData,
-  useLoaderData,
-  useTransition,
-} from "@remix-run/react";
+import { useActionData, useLoaderData, useTransition } from "@remix-run/react";
 import { useEffect, useRef } from "react";
 import { MainTweet } from "~/components/mainTweet";
 import { Tweet } from "~/components/tweet";
 import { getUserId } from "~/server/session.server";
-import type { DbTweets, DbUser } from "~/server/supabase.server";
+import type {
+  DbTweets,
+  DbUser} from "~/server/supabase.server";
+import {
+  getBookmarkCount,
+  hasUserBookmarkedTweet,
+} from "~/server/supabase.server";
 import { getLikeCount, hasUserLikedTweet } from "~/server/supabase.server";
 import { insertTweetReplyFromUser } from "~/server/supabase.server";
 import { getTweetUserName } from "~/server/supabase.server";
@@ -28,6 +30,8 @@ type LoaderTweet = {
   replies: TweetReply[];
   likesCount: number;
   likeActive: boolean;
+  bookmarkCount: number;
+  bookmarkActive: boolean;
 };
 
 type TweetReply =
@@ -41,6 +45,8 @@ type TweetReply =
         userName: string;
         likesCount: number;
         likeActive: boolean;
+        bookmarkCount: number;
+        bookmarkActive: boolean;
       };
     }
   | { type: "error"; error: "User not found" | "Tweet not found" };
@@ -131,6 +137,12 @@ export const loader: LoaderFunction = async ({ request, params }) => {
     likeActive:
       (await hasUserLikedTweet({ tweetId: tweetId, userId: loggedInUserId })) ??
       false,
+    bookmarkCount: (await getBookmarkCount({ tweetId: tweet.tweet_id })) ?? 0,
+    bookmarkActive:
+      (await hasUserBookmarkedTweet({
+        tweetId,
+        userId: loggedInUserId,
+      })) ?? false,
   };
 
   const replies: TweetReply[] = await Promise.all(
@@ -151,6 +163,17 @@ export const loader: LoaderFunction = async ({ request, params }) => {
           userId: loggedInUserId,
         })) ?? false;
 
+      const bookmarkCount =
+        (await getBookmarkCount({
+          tweetId: repliesResult.tweet_id,
+        })) ?? 0;
+
+      const bookmarkActive =
+        (await hasUserBookmarkedTweet({
+          tweetId: repliesResult.tweet_id,
+          userId: loggedInUserId,
+        })) ?? false;
+
       if (tweetUserName === null) {
         return { type: "error", error: "User not found" };
       }
@@ -167,6 +190,8 @@ export const loader: LoaderFunction = async ({ request, params }) => {
           replyCount: repliesResult.replies.length,
           likesCount: likesCount,
           likeActive: likeActive,
+          bookmarkActive,
+          bookmarkCount,
         },
       };
     })
@@ -251,6 +276,8 @@ export default function TweetPage() {
       likesCount,
       likeActive,
       tweet_id,
+      bookmarkActive,
+      bookmarkCount,
     },
   } = loaderData;
   return (
@@ -268,6 +295,8 @@ export default function TweetPage() {
           likesCount={likesCount}
           likeActive={likeActive}
           tweetId={tweet_id}
+          bookmarkActive={bookmarkActive}
+          bookmarkCount={bookmarkCount}
         />
         {replies.map((reply) => {
           if (reply.type === "error") return <div>{reply.error}</div>;
@@ -280,6 +309,8 @@ export default function TweetPage() {
             userName,
             likeActive,
             likesCount,
+            bookmarkActive,
+            bookmarkCount,
           } = reply.tweet;
 
           return (
@@ -292,6 +323,8 @@ export default function TweetPage() {
                 tweetId={tweet_id}
                 repliedTo={replied_to ?? undefined}
                 userName={userName}
+                bookmarkActive={bookmarkActive}
+                bookmarkCount={bookmarkCount}
               />
             </div>
           );

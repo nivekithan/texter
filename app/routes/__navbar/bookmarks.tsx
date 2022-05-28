@@ -3,48 +3,46 @@ import { json } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import { Tweet } from "~/components/tweet";
 import { getUserId } from "~/server/session.server";
-import type {
-  DbUser} from "~/server/supabase.server";
+import type { DbUser} from "~/server/supabase.server";
+import { getUserOfUserId } from "~/server/supabase.server";
 import {
   getBookmarkCount,
-  hasUserBookmarkedTweet,
-} from "~/server/supabase.server";
-import {
   getLikeCount,
-  getTweetsUserHasLiked,
+  getTweetsUserHasBookmarked,
   getTweetUserName,
-  getUserOfUserName,
+  hasUserBookmarkedTweet,
   hasUserLikedTweet,
 } from "~/server/supabase.server";
-import { invariant } from "~/utils/utils";
 
 type LoaderTweets = {
-  userName: string;
   message: string;
-  tweetId: string;
-  repliedTo?: string;
   repliesCount: number;
+  tweetId: string;
+  userName: string;
+  repliedTo?: string;
   likesCount: number;
   likeActive: boolean;
-  bookmarkCount: number;
   bookmarkActive: boolean;
+  bookmarkCount: number;
 };
 
 type LoaderData =
   | {
+      type: "error";
+      error: "Tweets not found";
+    }
+  | {
       type: "success";
       tweets: LoaderTweets[];
-    }
-  | { type: "error"; error: "User not found" | "Tweets not found" };
+    };
 
 export const loader: LoaderFunction = async ({ request, params }) => {
   const loggedInUserId = (await getUserId(request))!;
 
-  const userName = params.user;
-
-  invariant(userName, "Expected route to have a dynamic route $user");
-
-  const user = await getUserOfUserName<Pick<DbUser, "user_id">>(userName);
+  const user = await getUserOfUserId<Pick<DbUser, "user_id">>(
+    loggedInUserId,
+    "user_id"
+  );
 
   if (user === null) {
     return json<LoaderData>({ type: "error", error: "Tweets not found" });
@@ -64,17 +62,17 @@ export const loader: LoaderFunction = async ({ request, params }) => {
     };
   };
 
-  const allLikedTweets = await getTweetsUserHasLiked<SelectReturns>({
+  const allLikedTweets = await getTweetsUserHasBookmarked<SelectReturns>({
     userId: user_id,
     selectQuery: `tweets!fk_tweet_id (
-        tweet_id,
-        message,
-        replied_to,
-        users!fk_user_id (
-            user_name
-        ),
-        replies
-    )`,
+              tweet_id,
+              message,
+              replied_to,
+              users!fk_user_id (
+                  user_name
+              ),
+              replies
+          )`,
   });
 
   if (allLikedTweets === null) {
@@ -114,8 +112,6 @@ export const loader: LoaderFunction = async ({ request, params }) => {
   );
 
   return json<LoaderData>({ type: "success", tweets: convertToCorrectFormat });
-
-  //   const allLikedTweets = await getTweetsUserHasLiked({selectQuery : "", userId })
 };
 
 export default function () {
@@ -124,40 +120,41 @@ export default function () {
   if (loaderData.type === "error") return <div>{loaderData.error}</div>;
 
   return (
-    <div>
-      <div>
-        <ol>
-          {loaderData.tweets.map(
-            ({
-              message,
-              repliesCount,
-              tweetId,
-              userName,
-              repliedTo,
-              likesCount,
-              likeActive,
-              bookmarkActive,
-              bookmarkCount,
-            }) => {
-              return (
-                <li key={tweetId} className="border-b border-gray-600">
-                  <Tweet
-                    likesCount={likesCount}
-                    message={message}
-                    relpiesCount={repliesCount}
-                    userName={userName}
-                    tweetId={tweetId}
-                    repliedTo={repliedTo}
-                    likeActive={likeActive}
-                    bookmarkActive={bookmarkActive}
-                    bookmarkCount={bookmarkCount}
-                  />
-                </li>
-              );
-            }
-          )}
-        </ol>
+    <div className="max-w-[600px] border-r border-gray-600 min-h-screen">
+      <div className="sticky top-0 p-4 bg-black font-bold text-xl shadow bg-opacity-80">
+        Bookmarks
       </div>
+      <ol>
+        {loaderData.tweets.map(
+          ({
+            message,
+            repliesCount,
+            tweetId,
+            userName,
+            repliedTo,
+            likesCount,
+            likeActive,
+            bookmarkActive,
+            bookmarkCount,
+          }) => {
+            return (
+              <li key={tweetId} className="border-b border-gray-600">
+                <Tweet
+                  likesCount={likesCount}
+                  message={message}
+                  relpiesCount={repliesCount}
+                  userName={userName}
+                  tweetId={tweetId}
+                  repliedTo={repliedTo}
+                  likeActive={likeActive}
+                  bookmarkActive={bookmarkActive}
+                  bookmarkCount={bookmarkCount}
+                />
+              </li>
+            );
+          }
+        )}
+      </ol>
     </div>
   );
 }

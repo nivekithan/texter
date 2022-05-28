@@ -41,6 +41,16 @@ export type DbUserLikedTweet = {
 };
 
 /**
+ * Represents `user_bookmarked_tweet` table in the database
+ */
+
+export type DbUserBookmarkedTweet = {
+  user_id: string;
+  tweet_id: string;
+  created_at: string;
+};
+
+/**
  * Each tweet is belongs to a user, through this function
  * you can get userName of the user who send that tweet
  *
@@ -370,7 +380,7 @@ export const insertTweetReplyFromUser = async ({
   }
 };
 
-export type UserLikedTweetArgs = {
+type UserLikedTweetArgs = {
   userId: string;
   tweetId: string;
 };
@@ -513,6 +523,161 @@ export const getTweetsUserHasLiked = async <T>({
 }: GetTweetsUserHasLikedArgs) => {
   const query = await supabase
     .from<DbUserLikedTweet>("user_liked_tweet")
+    .select(selectQuery)
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false });
+
+  if (query.error) {
+    // Something is wrong with the query
+    return null;
+  }
+
+  return query.data as unknown as T[];
+};
+
+export type UserBookmarkedTweetArgs = {
+  userId: string;
+  tweetId: string;
+};
+
+/**
+ *
+ * Adds to the db that the user with the `userId` has bookmarked the
+ * tweet with the `tweetId`
+ *
+ * @param userId - `user_id` of the user who have bookmarked the tweet
+ * @param tweetId - `tweet_id` of the tweet which got bookmarked
+ * @returns if the operation is successfull returns `DbUserBookmarkedTweet` object else returns
+ * `null`
+ */
+export const userBookmarkedTweet = async ({
+  userId,
+  tweetId,
+}: UserBookmarkedTweetArgs) => {
+  const query = await supabase
+    .from<DbUserBookmarkedTweet>("user_bookmarked_tweet")
+    .insert({ user_id: userId, tweet_id: tweetId });
+
+  if (query.error || query.data.length === 0) {
+    // There is some error while setting the bookmark
+    return null;
+  }
+
+  const bookmark = query.data[0]; // Only one bookmark is added
+
+  return bookmark;
+};
+
+/**
+ *
+ * Removes the bookarmark user has set to the tweet
+ *
+ * @param userId - `user_id` of the user who have removing the bookmark
+ * @param tweetId - `tweet_id` of the tweet
+ * @returns if the operation is successfull returns `DbUserBookmarkedTweet` object else returns
+ * `null`
+ */
+export const userRemovedBookmarkedTweet = async ({
+  userId,
+  tweetId,
+}: UserBookmarkedTweetArgs) => {
+  const query = await supabase
+    .from<DbUserBookmarkedTweet>("user_bookmarked_tweet")
+    .delete()
+    .eq("user_id", userId)
+    .eq("tweet_id", tweetId);
+
+  if (query.error || query.data.length === 0) {
+    // There is some error while removing the bookmark
+    return null;
+  }
+
+  const bookmark = query.data[0]; // Only one bookmarking removed
+
+  return bookmark;
+};
+
+export type GetBookmarkCountArgs = {
+  tweetId: string;
+};
+
+/**
+ *
+ * Gets the bookmark count of the tweet with the `tweetId`
+ *
+ * @param tweetId - `tweet_id` of the tweet for which like count is to be returned
+ * @returns if the operation is successfull return the count or else returns null
+ */
+
+export const getBookmarkCount = async ({ tweetId }: GetLikeCountArgs) => {
+  const query = await supabase
+    .from<DbUserBookmarkedTweet>("user_bookmarked_tweet")
+    .select("created_at", { count: "exact" })
+    .eq("tweet_id", tweetId);
+
+  if (query.error) {
+    // Something went wrong with the request
+    return null;
+  }
+
+  return query.count ?? 0;
+};
+
+export type HasUserBookmarkedTweetArgs = {
+  userId: string;
+  tweetId: string;
+};
+
+/**
+ * Finds out whether a user has liked a tweet or not
+ *
+ * @param userId - `user_id` of the user
+ * @param tweetId - `tweet_id` of the user
+ * @return if the operation is successfull return boolean noting whether user has
+ * bookmarked that tweet or not else returns null
+ *
+ */
+
+export const hasUserBookmarkedTweet = async ({
+  tweetId,
+  userId,
+}: HasUserBookmarkedTweetArgs) => {
+  const query = await supabase
+    .from<DbUserBookmarkedTweet>("user_bookmarked_tweet")
+    .select("created_at")
+    .eq("tweet_id", tweetId)
+    .eq("user_id", userId);
+
+  if (query.error) {
+    // Something went wrong with the request
+    return null;
+  }
+
+  // If the user have bookmarked the tweet, then the length would have been
+  // 1 but if the user have not bookmarked the tweet, then the length would be
+  // 0
+  return query.data.length === 1;
+};
+
+export type GetTweetsUserHasBookmarkedArgs = {
+  userId: string;
+  selectQuery: string;
+};
+
+/**
+ * Gets all the tweet the user has bookmarked
+ *
+ * @param userId - `user_id` of the user
+ * @param selectQuery - select query to be used while sending request
+ * @returns
+ */
+
+export const getTweetsUserHasBookmarked = async <T>({
+  userId,
+  selectQuery,
+}: GetTweetsUserHasLikedArgs) => {
+  const query = await supabase
+    .from<DbUserLikedTweet>("user_bookmarked_tweet")
     .select(selectQuery)
     .eq("user_id", userId)
     .order("created_at", { ascending: false });

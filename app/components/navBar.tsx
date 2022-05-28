@@ -1,6 +1,5 @@
 import { GrTwitter } from "react-icons/gr";
 import { RiHome4Line } from "react-icons/ri";
-import { HiOutlineHashtag } from "react-icons/hi";
 import { BsBookmark } from "react-icons/bs";
 import { FaUserAlt } from "react-icons/fa";
 import { FormButton } from "./formButton";
@@ -15,11 +14,7 @@ export const NavBar = ({ userName }: NavBarProps) => {
     <div className="flex flex-col gap-y-5">
       <GrTwitter size="30px" className="mb-3 ml-4" />
       <SideBarOption icons={<RiHome4Line size="30px" />} text="Home" to="/" />
-      <SideBarOption
-        icons={<HiOutlineHashtag size="30px" />}
-        text="Explore"
-        to="/explore"
-      />
+
       <SideBarOption
         icons={<BsBookmark size="27px" className="ml-1" />}
         text="Bookmarks"

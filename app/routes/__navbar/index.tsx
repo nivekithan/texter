@@ -7,6 +7,10 @@ import {
 } from "~/server/session.server";
 import { AppUrl } from "~/utils/url";
 import type { DbUser } from "~/server/supabase.server";
+import {
+  getBookmarkCount,
+  hasUserBookmarkedTweet,
+} from "~/server/supabase.server";
 import { getLikeCount, hasUserLikedTweet } from "~/server/supabase.server";
 import { getTweetUserName, getUserOfUserId } from "~/server/supabase.server";
 import { getLatestTweets } from "~/server/supabase.server";
@@ -24,6 +28,8 @@ type LoaderData = {
     repliesCount: number;
     likesCount: number;
     likeActive: boolean;
+    bookmarkCount: number;
+    bookmarkActive: boolean;
   }[];
   loggedInUserName: string;
 };
@@ -101,6 +107,12 @@ export const loader: LoaderFunction = async ({ request }) => {
           likesCount: (await getLikeCount({ tweetId: tweet_id })) ?? 0,
           likeActive:
             (await hasUserLikedTweet({
+              userId: loggedInUserId,
+              tweetId: tweet_id,
+            })) ?? false,
+          bookmarkCount: (await getBookmarkCount({ tweetId: tweet_id })) ?? 0,
+          bookmarkActive:
+            (await hasUserBookmarkedTweet({
               userId: loggedInUserId,
               tweetId: tweet_id,
             })) ?? false,
@@ -186,6 +198,8 @@ export default function () {
                 repliesCount,
                 likesCount,
                 likeActive,
+                bookmarkActive,
+                bookmarkCount,
               },
               i
             ) => {
@@ -199,6 +213,8 @@ export default function () {
                     relpiesCount={repliesCount}
                     likesCount={likesCount}
                     likeActive={likeActive}
+                    bookmarkActive={bookmarkActive}
+                    bookmarkCount={bookmarkCount}
                   />
                 </li>
               );

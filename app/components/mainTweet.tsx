@@ -1,7 +1,9 @@
 import { Form, Link, useTransition } from "@remix-run/react";
+import { blob } from "node:stream/consumers";
 import React, { useRef } from "react";
 import { useEffect } from "react";
 import { AiOutlineHeart } from "react-icons/ai";
+import { BsBookmarkPlus } from "react-icons/bs";
 import { FaRegComment } from "react-icons/fa";
 import { AppUrl } from "~/utils/url";
 import { FormButton } from "./formButton";
@@ -16,6 +18,8 @@ export type MainTweetProps = {
   errorMessage?: string;
   likeActive: boolean;
   tweetId: string;
+  bookmarkCount: number;
+  bookmarkActive: boolean;
 };
 
 export const MainTweet = ({
@@ -27,6 +31,8 @@ export const MainTweet = ({
   errorMessage,
   likeActive,
   tweetId,
+  bookmarkActive,
+  bookmarkCount,
 }: MainTweetProps) => {
   const transition = useTransition();
 
@@ -76,12 +82,14 @@ export const MainTweet = ({
         <div className="flex gap-x-4 p-4 border-gray-600 border-b ">
           <MainTweetInfo value={repliesCount} name="Replies" />
           <MainTweetInfo value={likesCount} name="Likes" />
+          <MainTweetInfo value={bookmarkCount} name="Bookmark" />
         </div>
         <div className="border-b border-gray-600 py-2">
           <MainTweetOptions
             onReplyClick={onReplyClick}
             likeActive={likeActive}
             tweetUrl={tweetUrl}
+            bookmarkActive={bookmarkActive}
           />
         </div>
       </div>
@@ -132,14 +140,17 @@ type MainTweetOptionsProps = {
   onReplyClick: (e: React.MouseEvent<HTMLButtonElement>) => void;
   likeActive: boolean;
   tweetUrl: string;
+  bookmarkActive: boolean;
 };
 
 const MainTweetOptions = ({
   onReplyClick,
   likeActive,
   tweetUrl,
+  bookmarkActive,
 }: MainTweetOptionsProps) => {
   const likeUrl = `${tweetUrl}/like`;
+  const bookmarkUrl = `${tweetUrl}/bookmark`;
 
   return (
     <ul className="flex justify-around">
@@ -173,12 +184,21 @@ const MainTweetOptions = ({
         </FormButton>
       </li>
       <li>
-        <button className="group p-3 rounded-full hover:bg-like-red hover:bg-opacity-20">
-          <AiOutlineHeart
+        <FormButton
+          action={bookmarkUrl}
+          method="post"
+          navigate={false}
+          name="actionType"
+          value={bookmarkActive ? "removeBookmark" : "bookmark"}
+          className="group p-3 rounded-full hover:bg-like-red hover:bg-opacity-20"
+        >
+          <BsBookmarkPlus
             size="20px"
-            className="fill-gray-500 group-hover:fill-like-red"
+            className={`group-hover:fill-like-red ${
+              bookmarkActive ? "fill-like-red" : "fill-gray-500"
+            }`}
           />
-        </button>
+        </FormButton>
       </li>
     </ul>
   );

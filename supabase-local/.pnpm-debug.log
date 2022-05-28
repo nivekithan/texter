@@ -6,9 +6,9 @@
     "code": "ERR_PNPM_NO_SCRIPT",
     "err": {
       "name": "pnpm",
-      "message": "Missing script: reset:db",
+      "message": "Missing script: db:reset",
       "code": "ERR_PNPM_NO_SCRIPT",
-      "stack": "pnpm: Missing script: reset:db\n    at Object.handler (C:\\Users\\nivek\\AppData\\Roaming\\npm\\pnpm-global\\5\\node_modules\\.pnpm\\pnpm@6.32.6\\node_modules\\pnpm\\dist\\pnpm.cjs:177996:15)\n    at async C:\\Users\\nivek\\AppData\\Roaming\\npm\\pnpm-global\\5\\node_modules\\.pnpm\\pnpm@6.32.6\\node_modules\\pnpm\\dist\\pnpm.cjs:182247:21\n    at async run (C:\\Users\\nivek\\AppData\\Roaming\\npm\\pnpm-global\\5\\node_modules\\.pnpm\\pnpm@6.32.6\\node_modules\\pnpm\\dist\\pnpm.cjs:182221:34)\n    at async runPnpm (C:\\Users\\nivek\\AppData\\Roaming\\npm\\pnpm-global\\5\\node_modules\\.pnpm\\pnpm@6.32.6\\node_modules\\pnpm\\dist\\pnpm.cjs:182440:5)\n    at async C:\\Users\\nivek\\AppData\\Roaming\\npm\\pnpm-global\\5\\node_modules\\.pnpm\\pnpm@6.32.6\\node_modules\\pnpm\\dist\\pnpm.cjs:182432:7"
+      "stack": "pnpm: Missing script: db:reset\n    at Object.handler (C:\\Users\\nivek\\AppData\\Roaming\\npm\\pnpm-global\\5\\node_modules\\.pnpm\\pnpm@6.32.6\\node_modules\\pnpm\\dist\\pnpm.cjs:177996:15)\n    at async C:\\Users\\nivek\\AppData\\Roaming\\npm\\pnpm-global\\5\\node_modules\\.pnpm\\pnpm@6.32.6\\node_modules\\pnpm\\dist\\pnpm.cjs:182247:21\n    at async run (C:\\Users\\nivek\\AppData\\Roaming\\npm\\pnpm-global\\5\\node_modules\\.pnpm\\pnpm@6.32.6\\node_modules\\pnpm\\dist\\pnpm.cjs:182221:34)\n    at async runPnpm (C:\\Users\\nivek\\AppData\\Roaming\\npm\\pnpm-global\\5\\node_modules\\.pnpm\\pnpm@6.32.6\\node_modules\\pnpm\\dist\\pnpm.cjs:182440:5)\n    at async C:\\Users\\nivek\\AppData\\Roaming\\npm\\pnpm-global\\5\\node_modules\\.pnpm\\pnpm@6.32.6\\node_modules\\pnpm\\dist\\pnpm.cjs:182432:7"
     }
   }
 }

@@ -2,10 +2,13 @@ import type { LoaderFunction } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import { getUserId } from "~/server/session.server";
-import {
+import type {
   DbTweets,
-  DbUser,
+  DbUser} from "~/server/supabase.server";
+import {
+  getBookmarkCount,
   getLikeCount,
+  hasUserBookmarkedTweet,
   hasUserLikedTweet,
 } from "~/server/supabase.server";
 import { getTweetUserName } from "~/server/supabase.server";
@@ -26,6 +29,8 @@ type LoaderData =
         repliesCount: number;
         likesCount: number;
         likeActive: boolean;
+        bookmarkCount: number;
+        bookmarkActive: boolean;
       }[];
     }
   | { type: "error"; error: "User not found" | "Tweets not found" };
@@ -82,6 +87,14 @@ export const loader: LoaderFunction = async ({ request, params }) => {
           tweetId: reply.tweet_id,
         })) ?? false;
 
+      const bookmarkCount =
+        (await getBookmarkCount({ tweetId: reply.tweet_id })) ?? 0;
+      const bookmarkActive =
+        (await hasUserBookmarkedTweet({
+          userId: loggedInUserId,
+          tweetId: reply.tweet_id,
+        })) ?? false;
+
       return {
         userName,
         tweetId: reply.tweet_id,
@@ -90,6 +103,8 @@ export const loader: LoaderFunction = async ({ request, params }) => {
         repliedTo: repliedTo ?? undefined,
         likesCount: likesCount,
         likeActive: likeActive,
+        bookmarkCount,
+        bookmarkActive,
       };
     })
   );
@@ -114,6 +129,8 @@ export default function TweetsFromUser() {
             repliedTo,
             likesCount,
             likeActive,
+            bookmarkActive,
+            bookmarkCount,
           }) => {
             return (
               <li key={tweetId} className="border-b border-gray-600">
@@ -125,6 +142,8 @@ export default function TweetsFromUser() {
                   tweetId={tweetId}
                   repliedTo={repliedTo}
                   likeActive={likeActive}
+                  bookmarkActive={bookmarkActive}
+                  bookmarkCount={bookmarkCount}
                 />
               </li>
             );

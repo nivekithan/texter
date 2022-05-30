@@ -3,8 +3,7 @@ import { json } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import { Tweet } from "~/components/tweet";
 import { getUserId } from "~/server/session.server";
-import type {
-  DbUser} from "~/server/supabase.server";
+import type { DbUser } from "~/server/supabase.server";
 import {
   getBookmarkCount,
   hasUserBookmarkedTweet,
@@ -28,6 +27,7 @@ type LoaderTweets = {
   likeActive: boolean;
   bookmarkCount: number;
   bookmarkActive: boolean;
+  profilePictureUrl: string;
 };
 
 type LoaderData =
@@ -59,6 +59,7 @@ export const loader: LoaderFunction = async ({ request, params }) => {
       replied_to: string | null; // UUID
       users: {
         user_name: string;
+        profile_picture_url: string | null;
       };
       replies: string[]; // UUID[]
     };
@@ -71,7 +72,8 @@ export const loader: LoaderFunction = async ({ request, params }) => {
         message,
         replied_to,
         users!fk_user_id (
-            user_name
+            user_name,
+            profile_picture_url
         ),
         replies
     )`,
@@ -109,6 +111,7 @@ export const loader: LoaderFunction = async ({ request, params }) => {
         likesCount: likesCount ?? 0,
         bookmarkActive: bookmarkActive ?? false,
         bookmarkCount: bookmarkCount ?? 0,
+        profilePictureUrl: tweets.users.profile_picture_url ?? "",
       };
     })
   );
@@ -138,6 +141,7 @@ export default function () {
               likeActive,
               bookmarkActive,
               bookmarkCount,
+              profilePictureUrl,
             }) => {
               return (
                 <li key={tweetId} className="border-b border-gray-600">
@@ -151,6 +155,7 @@ export default function () {
                     likeActive={likeActive}
                     bookmarkActive={bookmarkActive}
                     bookmarkCount={bookmarkCount}
+                    profilePictureUrl={profilePictureUrl}
                   />
                 </li>
               );

@@ -12,6 +12,9 @@ type LoaderData =
   | {
       type: "success";
       userName: string;
+      profilePictureUrl: string;
+      backgroundPictureUrl: string;
+      bio: string;
     }
   | { type: "error"; error: "User not found" };
 
@@ -35,9 +38,18 @@ export const loader: LoaderFunction = async ({ request, params }) => {
 
   invariant(userName, "Expected the route name to be $user");
 
-  const user = await getUserOfUserName<Pick<DbUser, "user_name" | "user_id">>(
+  const user = await getUserOfUserName<
+    Pick<
+      DbUser,
+      | "user_name"
+      | "user_id"
+      | "profile_picture_url"
+      | "background_picture_url"
+      | "bio"
+    >
+  >(
     userName,
-    "user_name, user_id"
+    "user_name, user_id, profile_picture_url, background_picture_url, bio"
   );
 
   if (user === null) {
@@ -47,6 +59,9 @@ export const loader: LoaderFunction = async ({ request, params }) => {
   return json<LoaderData>({
     userName: userName,
     type: "success",
+    backgroundPictureUrl: user.background_picture_url ?? "",
+    profilePictureUrl: user.profile_picture_url ?? "",
+    bio: user.bio ?? "",
   });
 };
 
@@ -58,9 +73,10 @@ export default function UserPage() {
     return <div>{loaderData.error}</div>;
   }
 
-  const { userName } = loaderData;
+  const { userName, backgroundPictureUrl, profilePictureUrl, bio } = loaderData;
 
-  const isTweetActive = pathNames[pathNames.length - 1] === userName;
+  const isTweetActive =
+    decodeURIComponent(pathNames[pathNames.length - 1]) === userName;
   const isTweetAndRepliesActive =
     pathNames[pathNames.length - 1] === "with_replies";
   const isLikesActive = pathNames[pathNames.length - 1] === "likes";
@@ -75,9 +91,20 @@ export default function UserPage() {
         {userName}
       </div>
       <div className="flex flex-col gap-y-8">
-        <UserPicture />
+        <UserPicture
+          profilePictureUrl={profilePictureUrl}
+          backgroundPictureUrl={backgroundPictureUrl}
+        />
+        <div className="flex justify-end -mt-[75px] mr-4">
+          <Link
+            to="../edit-profile"
+            className="px-6 py-2 rounded-full border border-texter-gray text-texter-blue hover:border-texter-blue"
+          >
+            Edit profile
+          </Link>
+        </div>
         <div className="ml-4">
-          <AboutUser userName={userName} />
+          <AboutUser userName={userName} bio={bio} />
         </div>
         <ul className="flex items-center border-b border-gray-600 text-texter-gray">
           <li className="flex-1">
@@ -109,21 +136,41 @@ export default function UserPage() {
 }
 type AboutUserProps = {
   userName: string;
+  bio: string;
 };
 
-const AboutUser = ({ userName }: AboutUserProps) => {
-  return <h1 className="font-bold text-xl">{userName}</h1>;
+const AboutUser = ({ userName, bio }: AboutUserProps) => {
+  return (
+    <div className="flex flex-col gap-y-5">
+      <h1 className="font-bold text-xl">{userName}</h1>
+      <p className="text-sm">{bio}</p>
+    </div>
+  );
 };
 
-const UserPicture = () => {
+type UserPictureProps = {
+  profilePictureUrl: string;
+  backgroundPictureUrl: string;
+};
+
+const UserPicture = ({
+  profilePictureUrl,
+  backgroundPictureUrl,
+}: UserPictureProps) => {
   return (
     <div>
-      <div className="h-[200px] bg-texter-gray-dark">
+      <div
+        className="h-[200px] bg-texter-gray-dark bg-no-repeat bg-cover"
+        style={{ backgroundImage: `url(${backgroundPictureUrl})` }}
+      >
         {/* Background picture */}
       </div>
       <div>
         {/* Profile picture */}
-        <div className="w-[150px] h-[150px] bg-texter-blue rounded-full -mt-[75px] ml-4"></div>
+        <div
+          className="w-[150px] h-[150px] bg-texter-blue rounded-full -mt-[75px] ml-4 border-4 border-black bg-no-repeat bg-cover"
+          style={{ backgroundImage: `url(${profilePictureUrl})` }}
+        ></div>
       </div>
     </div>
   );

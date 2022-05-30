@@ -4,6 +4,7 @@ import {
   insertTweetFromUser,
   insertTweetReplyFromUser,
   insertUserWithPassword,
+  supabase,
   userLikedTweet,
 } from "~/server/supabase.server";
 
@@ -78,4 +79,8 @@ const sleep = async (ms: number) => {
   await sleep(100);
 
   await userLikedTweet({ userId: userUserId, tweetId: fourthTweet.tweet_id });
+
+  await supabase.storage.createBucket("pictures", { public: true });
+
+  
 })();

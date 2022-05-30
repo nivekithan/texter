@@ -30,8 +30,10 @@ type LoaderData = {
     likeActive: boolean;
     bookmarkCount: number;
     bookmarkActive: boolean;
+    profilePictureUrl: string;
   }[];
   loggedInUserName: string;
+  loggedInProfilePictureUrl: string;
 };
 
 export const loader: LoaderFunction = async ({ request }) => {
@@ -50,11 +52,11 @@ export const loader: LoaderFunction = async ({ request }) => {
     return redirect(finalUrl);
   }
 
-  const loggedInUsernameQuery = await getUserOfUserId<
-    Pick<DbUser, "user_name">
-  >(loggedInUserId);
+  const loggedInUser = await getUserOfUserId<
+    Pick<DbUser, "user_name" | "profile_picture_url">
+  >(loggedInUserId, "user_name, profile_picture_url");
 
-  if (loggedInUsernameQuery === null) {
+  if (loggedInUser === null) {
     // There is no user with that name
 
     const userSession = await getUserSession(request);
@@ -75,21 +77,25 @@ export const loader: LoaderFunction = async ({ request }) => {
     });
   }
 
-  const { user_name: loggedInUserName } = loggedInUsernameQuery;
+  const { user_name: loggedInUserName } = loggedInUser;
 
   const latest10Tweets = await getLatestTweets<{
     message: string;
     tweet_id: string;
-    users: { user_name: string };
+    users: { user_name: string; profile_picture_url: string | null };
     replied_to: string | null;
     replies: string[];
   }>({
     count: 10,
-    selectQuery: `message, tweet_id, users!fk_user_id (user_name), replied_to, replies`,
+    selectQuery: `message, tweet_id, users!fk_user_id (user_name, profile_picture_url), replied_to, replies`,
   });
   if (latest10Tweets === null) {
     // Something is wrong with getting data from database
-    return json<LoaderData>({ tweets: [], loggedInUserName });
+    return json<LoaderData>({
+      tweets: [],
+      loggedInUserName,
+      loggedInProfilePictureUrl: loggedInUser.profile_picture_url ?? "",
+    });
   }
 
   const latestTweetsWithRepliedTo = await Promise.all(
@@ -116,6 +122,7 @@ export const loader: LoaderFunction = async ({ request }) => {
               userId: loggedInUserId,
               tweetId: tweet_id,
             })) ?? false,
+          profilePictureUrl: users.profile_picture_url ?? "",
         };
       }
     )
@@ -124,6 +131,7 @@ export const loader: LoaderFunction = async ({ request }) => {
   return json<LoaderData>({
     tweets: latestTweetsWithRepliedTo,
     loggedInUserName,
+    loggedInProfilePictureUrl: loggedInUser.profile_picture_url ?? "",
   });
 };
 
@@ -174,7 +182,8 @@ export const action: ActionFunction = async ({ request }) => {
 };
 
 export default function () {
-  const { tweets, loggedInUserName } = useLoaderData<LoaderData>();
+  const { tweets, loggedInUserName, loggedInProfilePictureUrl } =
+    useLoaderData<LoaderData>();
   const userUrl = `${AppUrl.home}${loggedInUserName}`;
   const actionData = useActionData<ActionData>();
   return (
@@ -185,7 +194,11 @@ export default function () {
 
       <div className="max-w-[600px] border-r border-gray-600 min-h-screen">
         <div className="border-b border-gray-600">
-          <SendTweet error={actionData?.error} userUrl={userUrl} />
+          <SendTweet
+            error={actionData?.error}
+            userUrl={userUrl}
+            profilePictureUrl={loggedInProfilePictureUrl}
+          />
         </div>
         <ol>
           {tweets.map(
@@ -200,6 +213,7 @@ export default function () {
                 likeActive,
                 bookmarkActive,
                 bookmarkCount,
+                profilePictureUrl,
               },
               i
             ) => {
@@ -215,6 +229,7 @@ export default function () {
                     likeActive={likeActive}
                     bookmarkActive={bookmarkActive}
                     bookmarkCount={bookmarkCount}
+                    profilePictureUrl={profilePictureUrl}
                   />
                 </li>
               );

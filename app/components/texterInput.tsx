@@ -6,6 +6,7 @@ export type TexterInputProps = {
   autoFocus?: boolean;
   error?: boolean;
   errorMessage?: string;
+  defaultValue?: string;
 };
 
 export const TexterInput = ({
@@ -16,6 +17,7 @@ export const TexterInput = ({
   autoFocus,
   error,
   errorMessage,
+  defaultValue,
 }: TexterInputProps) => {
   return (
     <div className="flex flex-col w-full gap-y-6">
@@ -34,6 +36,7 @@ export const TexterInput = ({
           }`}
           placeholder={placeholder}
           autoFocus={autoFocus}
+          defaultValue={defaultValue}
         />
         {errorMessage ? (
           <p className="text-red-error text-sm">{errorMessage}</p>

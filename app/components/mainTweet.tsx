@@ -20,6 +20,7 @@ export type MainTweetProps = {
   tweetId: string;
   bookmarkCount: number;
   bookmarkActive: boolean;
+  profilePictureUrl: string;
 };
 
 export const MainTweet = ({
@@ -33,6 +34,7 @@ export const MainTweet = ({
   tweetId,
   bookmarkActive,
   bookmarkCount,
+  profilePictureUrl,
 }: MainTweetProps) => {
   const transition = useTransition();
 
@@ -64,7 +66,10 @@ export const MainTweet = ({
         <div className="border-b border-gray-600 pb-8 flex flex-col gap-y-4">
           <div className="flex gap-x-2 items-center">
             <Link to={userUrl}>
-              <div className="w-[50px] h-[50px] rounded-full bg-texter-blue">
+              <div
+                className="w-[50px] h-[50px] rounded-full bg-texter-blue bg-no-repeat bg-cover"
+                style={{ backgroundImage: `url(${profilePictureUrl})` }}
+              >
                 {/* Profile Picture */}
               </div>
             </Link>
@@ -98,6 +103,7 @@ export const MainTweet = ({
           ref={textAreaRef}
           errorMessage={errorMessage}
           userUrl={userUrl}
+          profilePictureUrl={profilePictureUrl}
         />
       </Form>
     </div>
@@ -207,12 +213,13 @@ const MainTweetOptions = ({
 type TweetYourReplyProps = {
   errorMessage?: string;
   userUrl: string;
+  profilePictureUrl: string;
 };
 
 const TweetYourReply = React.forwardRef<
   HTMLTextAreaElement,
   TweetYourReplyProps
->(({ errorMessage, userUrl }, ref) => {
+>(({ errorMessage, userUrl, profilePictureUrl }, ref) => {
   return (
     <div className="flex flex-col gap-y-2">
       <TexterTextArea
@@ -222,6 +229,7 @@ const TweetYourReply = React.forwardRef<
         errorMessage={errorMessage}
         label="Your Reply"
         userUrl={userUrl}
+        profilePictureUrl={profilePictureUrl}
       />
       <div className="flex justify-end p-4">
         <button

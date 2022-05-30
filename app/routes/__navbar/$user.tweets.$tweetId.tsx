@@ -6,9 +6,7 @@ import { useEffect, useRef } from "react";
 import { MainTweet } from "~/components/mainTweet";
 import { Tweet } from "~/components/tweet";
 import { getUserId } from "~/server/session.server";
-import type {
-  DbTweets,
-  DbUser} from "~/server/supabase.server";
+import type { DbTweets, DbUser } from "~/server/supabase.server";
 import {
   getBookmarkCount,
   hasUserBookmarkedTweet,
@@ -32,6 +30,7 @@ type LoaderTweet = {
   likeActive: boolean;
   bookmarkCount: number;
   bookmarkActive: boolean;
+  profilePictureUrl: string;
 };
 
 type TweetReply =
@@ -47,6 +46,7 @@ type TweetReply =
         likeActive: boolean;
         bookmarkCount: number;
         bookmarkActive: boolean;
+        profilePictureUrl: string;
       };
     }
   | { type: "error"; error: "User not found" | "Tweet not found" };
@@ -94,12 +94,21 @@ export const loader: LoaderFunction = async ({ request, params }) => {
 
   const { user_id: userId } = user;
 
-  const tweet = await getOneTweetFromUser<
-    Pick<DbTweets, "message" | "tweet_id" | "replied_to" | "replies">
-  >({
+  type TweetQueryResult = {
+    message: string;
+    tweet_id: string;
+    replied_to: string | null;
+    replies: string[];
+    users: {
+      profile_picture_url: string | null;
+    };
+  };
+
+  const tweet = await getOneTweetFromUser<TweetQueryResult>({
     userId: userId,
     tweetId,
-    selectQuery: "message, tweet_id, replied_to, replies",
+    selectQuery:
+      "message, tweet_id, replied_to, replies, users!fk_user_id(profile_picture_url)",
   });
 
   if (tweet === null) {
@@ -119,11 +128,20 @@ export const loader: LoaderFunction = async ({ request, params }) => {
 
   const repliesResult = await Promise.all(
     tweet.replies.map((replyTweetId) => {
-      const replyTweet = getTweet<
-        Pick<DbTweets, "message" | "tweet_id" | "replied_to" | "replies">
-      >({
+      type ReplyTweetQueryResult = {
+        message: string;
+        tweet_id: string;
+        replied_to: string | null;
+        replies: string[];
+        users: {
+          profile_picture_url: string | null;
+        };
+      };
+
+      const replyTweet = getTweet<ReplyTweetQueryResult>({
         tweetId: replyTweetId,
-        selectQuery: "message, tweet_id, replied_to, replies",
+        selectQuery:
+          "message, tweet_id, replied_to, replies, users!fk_user_id(profile_picture_url)",
       });
 
       return replyTweet;
@@ -143,6 +161,7 @@ export const loader: LoaderFunction = async ({ request, params }) => {
         tweetId,
         userId: loggedInUserId,
       })) ?? false,
+    profilePictureUrl: tweet.users.profile_picture_url ?? "",
   };
 
   const replies: TweetReply[] = await Promise.all(
@@ -192,6 +211,7 @@ export const loader: LoaderFunction = async ({ request, params }) => {
           likeActive: likeActive,
           bookmarkActive,
           bookmarkCount,
+          profilePictureUrl: repliesResult.users.profile_picture_url ?? "",
         },
       };
     })
@@ -278,6 +298,7 @@ export default function TweetPage() {
       tweet_id,
       bookmarkActive,
       bookmarkCount,
+      profilePictureUrl,
     },
   } = loaderData;
   return (
@@ -297,6 +318,7 @@ export default function TweetPage() {
           tweetId={tweet_id}
           bookmarkActive={bookmarkActive}
           bookmarkCount={bookmarkCount}
+          profilePictureUrl={profilePictureUrl}
         />
         {replies.map((reply) => {
           if (reply.type === "error") return <div>{reply.error}</div>;
@@ -311,6 +333,7 @@ export default function TweetPage() {
             likesCount,
             bookmarkActive,
             bookmarkCount,
+            profilePictureUrl,
           } = reply.tweet;
 
           return (
@@ -325,6 +348,7 @@ export default function TweetPage() {
                 userName={userName}
                 bookmarkActive={bookmarkActive}
                 bookmarkCount={bookmarkCount}
+                profilePictureUrl={profilePictureUrl}
               />
             </div>
           );

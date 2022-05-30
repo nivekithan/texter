@@ -15,6 +15,7 @@ export type TweetProps = {
   likeActive: boolean;
   bookmarkCount: number;
   bookmarkActive: boolean;
+  profilePictureUrl: string;
 };
 
 export const Tweet = ({
@@ -27,6 +28,7 @@ export const Tweet = ({
   likeActive,
   bookmarkCount,
   bookmarkActive,
+  profilePictureUrl,
 }: TweetProps) => {
   const userUrl = `${AppUrl.home}${userName}`;
   const tweetUrl = `${AppUrl.home}${userName}/tweets/${tweetId}`;
@@ -34,7 +36,10 @@ export const Tweet = ({
   return (
     <div className="flex p-3 gap-x-2">
       <Link to={userUrl}>
-        <div className="w-[50px] h-[50px] rounded-full bg-texter-blue">
+        <div
+          className="w-[50px] h-[50px] rounded-full bg-texter-blue bg-no-repeat bg-cover"
+          style={{ backgroundImage: `url(${profilePictureUrl})` }}
+        >
           {/* Profile Picture */}
         </div>
       </Link>

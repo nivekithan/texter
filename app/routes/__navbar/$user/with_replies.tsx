@@ -2,9 +2,7 @@ import type { LoaderFunction } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import { getUserId } from "~/server/session.server";
-import type {
-  DbTweets,
-  DbUser} from "~/server/supabase.server";
+import type { DbTweets, DbUser } from "~/server/supabase.server";
 import {
   getBookmarkCount,
   getLikeCount,
@@ -31,6 +29,7 @@ type LoaderData =
         likeActive: boolean;
         bookmarkCount: number;
         bookmarkActive: boolean;
+        profilePictureUrl: string;
       }[];
     }
   | { type: "error"; error: "User not found" | "Tweets not found" };
@@ -63,10 +62,18 @@ export const loader: LoaderFunction = async ({ request, params }) => {
 
   const { user_id: userId } = user;
 
-  const allTweetsSelectQuery = "tweet_id, message, replied_to, replies";
-  const allTweets = await getAllTweetsFromUser<
-    Pick<DbTweets, "message" | "replied_to" | "replies" | "tweet_id">
-  >({
+  const allTweetsSelectQuery =
+    "tweet_id, message, replied_to, replies, users!fk_user_id(profile_picture_url)";
+  type AllTweetQueryResult = {
+    tweet_id: string;
+    message: string;
+    replied_to: string | null;
+    replies: string[];
+    users: {
+      profile_picture_url: string | null;
+    };
+  };
+  const allTweets = await getAllTweetsFromUser<AllTweetQueryResult>({
     userId,
     selectQuery: allTweetsSelectQuery,
   });
@@ -105,6 +112,7 @@ export const loader: LoaderFunction = async ({ request, params }) => {
         likeActive: likeActive,
         bookmarkCount,
         bookmarkActive,
+        profilePictureUrl: reply.users.profile_picture_url ?? "",
       };
     })
   );
@@ -131,6 +139,7 @@ export default function TweetsFromUser() {
             likeActive,
             bookmarkActive,
             bookmarkCount,
+            profilePictureUrl,
           }) => {
             return (
               <li key={tweetId} className="border-b border-gray-600">
@@ -144,6 +153,7 @@ export default function TweetsFromUser() {
                   likeActive={likeActive}
                   bookmarkActive={bookmarkActive}
                   bookmarkCount={bookmarkCount}
+                  profilePictureUrl={profilePictureUrl}
                 />
               </li>
             );

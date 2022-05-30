@@ -1,5 +1,6 @@
 import type { PostgrestResponse } from "@supabase/supabase-js";
 import { createClient } from "@supabase/supabase-js";
+import { Readable } from "stream";
 import { getEnvVar } from "~/utils/utils";
 
 export const supabase = createClient(
@@ -15,6 +16,9 @@ export type DbUser = {
   user_id: string;
   user_name: string;
   password_hash: string;
+  bio: string | null;
+  profile_picture_url: string | null;
+  background_picture_url: string | null;
 };
 
 /**
@@ -688,4 +692,104 @@ export const getTweetsUserHasBookmarked = async <T>({
   }
 
   return query.data as unknown as T[];
+};
+
+export type UploadProfilePictureArgs = {
+  userId: string;
+  file: Readable;
+  extension: string;
+  contentType: string;
+};
+
+export const uploadProfilePicture = async ({
+  userId,
+  extension,
+  file,
+  contentType,
+}: UploadProfilePictureArgs) => {
+  const path = `${userId}/profile_picture${extension}`;
+
+  const uploadRes = await supabase.storage
+    .from("pictures")
+    .upload(path, file, { contentType });
+
+  if (uploadRes.error) {
+    // Try to update  it
+    const updateRes = await supabase.storage
+      .from("pictures")
+      .update(path, file, { contentType });
+
+    if (updateRes === null) {
+      return null;
+    }
+  }
+
+  const publicUrlRes = await supabase.storage
+    .from("pictures")
+    .getPublicUrl(path);
+
+  const publicUrl = publicUrlRes.publicURL;
+
+  if (publicUrl === null) {
+    return null;
+  }
+
+  const updateUser = await supabase
+    .from<DbUser>("users")
+    .update({ profile_picture_url: publicUrl })
+    .eq("user_id", userId);
+
+  if (updateUser.error || updateUser.data.length === 0) {
+    console.log(updateUser.error);
+    return null;
+  }
+
+  return publicUrl;
+};
+
+export const uploadBackgroundPicture = async ({
+  userId,
+  extension,
+  file,
+  contentType,
+}: UploadProfilePictureArgs) => {
+  const path = `${userId}/background_picture${extension}`;
+
+  console.log(path);
+
+  const uploadRes = await supabase.storage
+    .from("pictures")
+    .upload(path, file, { contentType });
+
+  if (uploadRes.error) {
+    // Try to update  it
+    const updateRes = await supabase.storage
+      .from("pictures")
+      .update(path, file, { contentType });
+
+    if (updateRes === null) {
+      return null;
+    }
+  }
+
+  const publicUrlRes = await supabase.storage
+    .from("pictures")
+    .getPublicUrl(path);
+
+  const publicUrl = publicUrlRes.publicURL;
+
+  if (publicUrl === null) {
+    return null;
+  }
+
+  const updateUser = await supabase
+    .from<DbUser>("users")
+    .update({ background_picture_url: publicUrl })
+    .eq("user_id", userId);
+
+  if (updateUser.error || updateUser.data.length === 0) {
+    return null;
+  }
+
+  return publicUrl;
 };

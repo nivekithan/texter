@@ -15,6 +15,7 @@ specifiers:
   autoprefixer: ^10.4.7
   bcryptjs: ^2.4.3
   concurrently: ^7.2.0
+  cross-env: ^7.0.3
   dotenv: ^16.0.1
   esbuild-register: ^3.3.2
   eslint: ^8.15.0
@@ -50,6 +51,7 @@ devDependencies:
   '@types/react-dom': 17.0.17
   autoprefixer: 10.4.7_postcss@8.4.14
   concurrently: 7.2.0
+  cross-env: 7.0.3
   dotenv: 16.0.1
   esbuild-register: 3.3.2
   eslint: 8.15.0
@@ -2122,6 +2124,14 @@ packages:
     resolution: {integrity: sha512-ZQBvi1DcpJ4GDqanjucZ2Hj3wEO5pZDS89BWbkcrvdxksJorwUDDZamX9ldFkp9aw2lmBDLgkObEA4DWNJ9FYQ==}
     dev: true
 
+  /cross-env/7.0.3:
+    resolution: {integrity: sha512-+/HKd6EgcQCJGh2PSjZuUitQBQynKor4wrFbRg4DtAgS1aWO+gU52xpH7M9ScGgXSYmAVS9bIJ8EzuaGw0oNAw==}
+    engines: {node: '>=10.14', npm: '>=6', yarn: '>=1'}
+    hasBin: true
+    dependencies:
+      cross-spawn: 7.0.3
+    dev: true
+
   /cross-fetch/3.1.5:
     resolution: {integrity: sha512-lvb1SBsI0Z7GDwmuid+mU3kWVBwTVUbe7S0H52yaaAdQOXq2YktTCZdlAcNKFzE6QtRz0snpw9bNiPeOIkkQvw==}
     dependencies:
@@ -4181,7 +4191,7 @@ packages:
     dev: true
 
   /isexe/2.0.0:
-    resolution: {integrity: sha1-6PvzdNxVb/iUehDcsFctYz8s+hA=}
+    resolution: {integrity: sha512-RHxMLp9lnKHGHRng9QFhRCMbYAcVpn69smSGcq3f36xjgVVWThj4qqLbTLlq7Ssj8B+fIQ1EuCEGI2lKsyQeIw==}
     dev: true
 
   /isobject/2.1.0:

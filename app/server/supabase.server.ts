@@ -1,11 +1,15 @@
 import type { PostgrestResponse } from "@supabase/supabase-js";
 import { createClient } from "@supabase/supabase-js";
-import { Readable } from "stream";
+import type { Readable } from "stream";
 import { getEnvVar } from "~/utils/utils";
 
 export const supabase = createClient(
-  getEnvVar("SUPABSE_LOCAL_API_URL"),
-  getEnvVar("SUPABASE_LOCAL_SERVICE_KEY")
+  process.env.NODE_ENV === "production"
+    ? getEnvVar("SUPABASE_PROD_API_URL")
+    : getEnvVar("SUPABASE_LOCAL_API_URL"),
+  process.env.NODE_ENV === "production"
+    ? getEnvVar("SUPABASE_PROD_SERVICE_KEY")
+    : getEnvVar("SUPABASE_LOCAL_SERVICE_KEY")
 );
 
 /**

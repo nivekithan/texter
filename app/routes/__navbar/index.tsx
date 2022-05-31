@@ -101,27 +101,46 @@ export const loader: LoaderFunction = async ({ request }) => {
   const latestTweetsWithRepliedTo = await Promise.all(
     latest10Tweets.map(
       async ({ message, tweet_id, users, replied_to, replies }) => {
+        const repliedToPromise =
+          replied_to === null ? null : getTweetUserName(replied_to);
+        const likesCountPromise = getLikeCount({ tweetId: tweet_id });
+
+        const likeActivePromise = hasUserLikedTweet({
+          userId: loggedInUserId,
+          tweetId: tweet_id,
+        });
+
+        const bookmarkCountPromise = getBookmarkCount({ tweetId: tweet_id });
+
+        const bookmarkActivePromise = hasUserBookmarkedTweet({
+          userId: loggedInUserId,
+          tweetId: tweet_id,
+        });
+
+        const [
+          repliedTo,
+          likesCount,
+          likeActive,
+          bookmarkCount,
+          bookmarkActive,
+        ] = await Promise.all([
+          repliedToPromise,
+          likesCountPromise,
+          likeActivePromise,
+          bookmarkCountPromise,
+          bookmarkActivePromise,
+        ]);
+
         return {
           message,
           tweetId: tweet_id,
           userName: users.user_name,
-          repliedTo:
-            replied_to === null
-              ? undefined
-              : (await getTweetUserName(replied_to)) ?? undefined,
+          repliedTo: repliedTo ?? undefined,
           repliesCount: replies.length,
-          likesCount: (await getLikeCount({ tweetId: tweet_id })) ?? 0,
-          likeActive:
-            (await hasUserLikedTweet({
-              userId: loggedInUserId,
-              tweetId: tweet_id,
-            })) ?? false,
-          bookmarkCount: (await getBookmarkCount({ tweetId: tweet_id })) ?? 0,
-          bookmarkActive:
-            (await hasUserBookmarkedTweet({
-              userId: loggedInUserId,
-              tweetId: tweet_id,
-            })) ?? false,
+          likesCount: likesCount ?? 0,
+          likeActive: likeActive ?? false,
+          bookmarkCount: bookmarkCount ?? 0,
+          bookmarkActive: bookmarkActive ?? false,
           profilePictureUrl: users.profile_picture_url ?? "",
         };
       }

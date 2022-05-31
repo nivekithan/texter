@@ -12,6 +12,11 @@ export const supabase = createClient(
     : getEnvVar("SUPABASE_LOCAL_SERVICE_KEY")
 );
 
+// export const supabase = createClient(
+//   getEnvVar("SUPABASE_PROD_API_URL"),
+//   getEnvVar("SUPABASE_PROD_SERVICE_KEY")
+// );
+
 /**
  * Represents `users` table in the database
  *
@@ -723,7 +728,7 @@ export const uploadProfilePicture = async ({
       .from("pictures")
       .update(path, file, { contentType });
 
-    if (updateRes === null) {
+    if (updateRes.error) {
       return null;
     }
   }
@@ -744,7 +749,6 @@ export const uploadProfilePicture = async ({
     .eq("user_id", userId);
 
   if (updateUser.error || updateUser.data.length === 0) {
-    console.log(updateUser.error);
     return null;
   }
 
@@ -758,8 +762,6 @@ export const uploadBackgroundPicture = async ({
   contentType,
 }: UploadProfilePictureArgs) => {
   const path = `${userId}/background_picture${extension}`;
-
-  console.log(path);
 
   const uploadRes = await supabase.storage
     .from("pictures")

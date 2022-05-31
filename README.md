@@ -3,8 +3,10 @@
 I created this project to improve my skills on both frontend and backend. 
 
 Project was created using 
+- For static types and better DX I am using [Typescript](https://www.typescriptlang.org/)
 - Full stack react framework [remix](https://remix.run/) 
 - For database I am using postgresql from [supabase](https://supabase.com/) 
+- For styling I am using [tailwindcss](https://tailwindcss.com/)
 - Deployed to [vercel](https://vercel.com)
 
 

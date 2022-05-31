@@ -15,7 +15,7 @@ Project was created using
 we authenticate users with `username` and `password` and persist them in `session storage` using `cookies`. 
 I have not used any third party libary for this but instead everything is written by myself.
 
-For hashing password I have used `bcrypt-js` and I have only stored hased password in database.
+For hashing password I have used `bcrypt-js` and I have only stored hashed password in database.
 
 ## Database
 
@@ -149,7 +149,7 @@ CREATE TABLE IF NOT EXISTS public.user_liked_tweet
 
 ### user_bookmarked_tweet table
 
-There is a `many-to-many` relationship between `user` and `bookmarkes`, this tables represents that relationship
+There is a `many-to-many` relationship between `user` and `bookmarks`, this tables represents that relationship
 
 The model for this table is
 
